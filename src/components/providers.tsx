@@ -1,10 +1,12 @@
 "use client"
 
 
-import { ClerkProvider, useAuth } from '@clerk/nextjs';
-import { ConvexReactClient } from 'convex/react';
+import { ClerkProvider, SignInButton, SignUpButton, useAuth, UserButton } from '@clerk/nextjs';
+import { Authenticated, AuthLoading, ConvexReactClient, Unauthenticated } from 'convex/react';
 import { ConvexProviderWithClerk } from 'convex/react-clerk';
 import { ThemeProvider } from './theme-provider';
+import { UnauthenticatedView } from '@/features/auth/components/unathenticated-view';
+import { AuthLoadingView } from '@/features/auth/components/auth-loading-view';
 
 const convex = new ConvexReactClient( process.env.NEXT_PUBLIC_CONVEX_URL!);   // Instancia de conexión al backend
 
@@ -19,7 +21,18 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {   //
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <Authenticated>
+            <UserButton />
+            {children}
+          </Authenticated>
+
+          <Unauthenticated>
+            <UnauthenticatedView />
+          </Unauthenticated>
+
+          <AuthLoading>
+            <AuthLoadingView />
+          </AuthLoading>
         </ThemeProvider>
       </ConvexProviderWithClerk>
     </ClerkProvider>
