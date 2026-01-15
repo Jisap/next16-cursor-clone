@@ -20,6 +20,21 @@ export default function Demo() {
     await fetch("/api/demo/background", { method: "POST" })
     setLoading2(false)
   }
+
+  // 1) Client error - Throw in the browser
+  const handleClientError = () => {
+    throw new Error("Client error: Something went wrong in the browser!")
+  };
+
+  // 2) Api error - Triggers server-side error
+  const handleApiError = async() => {
+    await fetch("/api/demo/error", { method: "POST" })
+  };
+
+  // 3) Inngest error - trigger error in background job
+  const handleInngestError = async() => {
+    await fetch("/api/demo/inngest-error", { method: "POST" })
+  }
   
   return (
     <div className='p-8 space-x-4'>
@@ -29,6 +44,27 @@ export default function Demo() {
 
       <Button onClick={handleBackground} disabled={loading}>
         {loading ? "Loading..." : "Background"}
+      </Button>
+
+      <Button
+        variant="destructive"
+        onClick={handleClientError}
+      >
+        Client Error
+      </Button>
+
+      <Button
+        variant="destructive"
+        onClick={handleApiError}
+      >
+        Api Error
+      </Button>
+
+      <Button
+        variant="destructive"
+        onClick={handleInngestError}
+      >
+        Inngest Error
       </Button>
     </div>
   )
