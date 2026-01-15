@@ -18,5 +18,11 @@ Sentry.init({
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
 
-  integrations: [Sentry.vercelAIIntegration]
+  integrations: [
+    Sentry.vercelAIIntegration,
+    Sentry.consoleLoggingIntegration({
+      levels: ["log", "warn", "error"]
+    }),
+  
+  ],
 });
