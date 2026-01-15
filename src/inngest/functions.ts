@@ -38,6 +38,11 @@ export const demoGenerate = inngest.createFunction(
       return await generateText({
         model: google("gemini-2.5-flash"),
         prompt: finalPrompt,                                              // Se envía el prompt final a la API de Google. El modelo respondera la question que usuario hizo
+        experimental_telemetry: {
+          isEnabled: true,
+          recordInputs: true,
+          recordOutputs: true,
+        }
       })
     })
   }
