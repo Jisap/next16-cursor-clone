@@ -24,7 +24,7 @@ export const useCreateProject = () => {
 
   return useMutation(api.projects.create).withOptimisticUpdate(          // 1. useMutation prepara la llamada a la fn del backend "create"
     (localStore, args) => {                                              // 2. Obtiene el estado actual
-      const existingProjects = localStore.getQuery(api.projects.get);        // Busca en la caché local los datos de la consulta
+      const existingProjects = localStore.getQuery(api.projects.get);        // Busca en la caché local los datos de una consulta get que haya hecho
 
       if(existingProjects !== undefined){                                // 3. Solo procedemos si la lista de proyectos esta cargada en memoria
         const now = Date.now();                                              // Si si lo esta cargada obtenemos la fecha actual
@@ -40,6 +40,9 @@ export const useCreateProject = () => {
           newProject,                                                    // Con el nuevo proyecto
           ...existingProjects,
         ])
+
+        // Basicamente aquí se interceptan los datos que la aplicación ya tiene en memoria para modificarlos visualmente de forma 
+        // temporal (optimista) antes de que el servidor confirme el cambio real.
       }
     }
   )
