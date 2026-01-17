@@ -14,7 +14,7 @@ import {
   colors,
   uniqueNamesGenerator,
 } from "unique-names-generator"
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProjectsCommandDialog } from "./projects-command-dialog";
 import { set } from "date-fns";
 
@@ -28,6 +28,21 @@ export const ProjectsView = () => {
   
   const [commandDialogOpen, setCommandDialogOpen] = useState(false)
   const createProject = useCreateProject();
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault()
+        setCommandDialogOpen(true)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  },[])
   
   return (
     <>
