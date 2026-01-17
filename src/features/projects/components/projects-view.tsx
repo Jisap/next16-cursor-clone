@@ -14,7 +14,7 @@ import {
   colors,
   uniqueNamesGenerator,
 } from "unique-names-generator"
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ProjectsCommandDialog } from "./projects-command-dialog";
 import { set } from "date-fns";
 
@@ -29,11 +29,26 @@ export const ProjectsView = () => {
   const [commandDialogOpen, setCommandDialogOpen] = useState(false)
   const createProject = useCreateProject();
 
+  const handleCreateProject = useCallback(() => {
+    const projectName = uniqueNamesGenerator({
+      dictionaries: [adjectives, animals, colors],
+      separator: "_",
+      length: 3,
+    })
+    createProject({
+      name: projectName
+    })
+  }, [createProject])
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault()
         setCommandDialogOpen(true)
+      }
+      if (event.key === "j" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault()
+        handleCreateProject()
       }
     }
 
@@ -42,7 +57,7 @@ export const ProjectsView = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  },[])
+  }, [handleCreateProject])
   
   return (
     <>
@@ -71,16 +86,7 @@ export const ProjectsView = () => {
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
-                onClick={()=>{
-                  const projectName = uniqueNamesGenerator({
-                    dictionaries: [adjectives, animals, colors],
-                    separator: "_",
-                    length: 3,
-                  })
-                  createProject({
-                    name: projectName
-                  })
-                }}
+                onClick={handleCreateProject}
                 className="h-full items-start p-4 bg-background border flex flex-col gap-6 rounded-none"
               >
                 <div className="flex items-center justify-between w-full">
