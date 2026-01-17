@@ -7,7 +7,6 @@ import { AlertCircleIcon, ArrowRightIcon, GlobeIcon, Loader2Icon } from "lucide-
 import { formatDistanceToNow } from "date-fns";
 import { FaGithub } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
-import { get } from "http";
 
 
 const formatTimestamp = (timestamp: number) => {
@@ -99,7 +98,7 @@ export const ProjectstList = ({ onViewAll }: ProjectsListProps) => {
   return (
     <div className="flex flex-col gap-4">
 
-      <ContinueCard data={mostRecent} />
+      {mostRecent ? <ContinueCard data={mostRecent} /> : null } 
 
       {rest.length > 0 && (
         <div className="flex flex-col gap-2">
@@ -112,7 +111,7 @@ export const ProjectstList = ({ onViewAll }: ProjectsListProps) => {
               className="flex items-center gap-2 text-muted-foreground text-xs hover:text-foreground transition-colors"
             >
               <span>View All</span>{" "}
-              <Kbd className="bg-accent border">Crtl + K</Kbd>
+              <Kbd className="bg-accent border">Ctrl + K</Kbd>
             </button>
           </div>
 

@@ -23,4 +23,5 @@ export default defineSchema({
     ),
     exportReportUrl: v.optional(v.string()),
   }).index("by_owner", ["ownerId"])
+    .index("by_owner_updatedAt", ["ownerId", "updatedAt"])
 });
