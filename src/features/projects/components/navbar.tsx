@@ -136,19 +136,19 @@ export const Navbar = ({ projectId }: { projectId: Id<'projects'> }) => {
             </TooltipContent>
           </Tooltip>
         ): (
-          project?.updatedAt && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <CloudCheckIcon className='size-4 text-muted-foreground' />
-                </TooltipTrigger>
-                <TooltipContent>
-                  Saved{" "}
-                  {formatDistanceToNow(project.updatedAt, 
-                    { addSuffix: true,}
-                  )}
-                </TooltipContent>
-              </Tooltip>
-          )
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <CloudCheckIcon className='size-4 text-muted-foreground' />
+            </TooltipTrigger>
+            <TooltipContent>
+              Saved{" "}
+              {project?.updatedAt 
+                ? formatDistanceToNow(project.updatedAt, 
+                  { addSuffix: true,})
+                : ("unknown")
+              }
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
 
