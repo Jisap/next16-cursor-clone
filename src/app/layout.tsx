@@ -24,6 +24,7 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
+  params: Promise<{ projectId: string }>
 }>) {
   return (
     

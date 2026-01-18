@@ -47,3 +47,9 @@ export const useCreateProject = () => {
     }
   )
 }
+
+export const useProject = (projectId: Id<"projects">) => {
+  return useQuery(api.projects.getById, { id: projectId });
+};
+
+
