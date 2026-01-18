@@ -11,6 +11,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
@@ -18,6 +23,8 @@ import { Poppins } from 'next/font/google'
 import { UserButton } from '@clerk/nextjs'
 import { useProject, useRenameProject } from '../hooks/use-projects'
 import { useState } from 'react'
+import { CloudCheckIcon, LoaderIcon } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
 
 const font = Poppins({
   subsets: ["latin"],
@@ -118,6 +125,31 @@ export const Navbar = ({ projectId }: { projectId: Id<'projects'> }) => {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+
+        {project?.importStatus === "importing" ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <LoaderIcon className='size-4 text-muted-foreground animate-spin' />
+            </TooltipTrigger>
+            <TooltipContent>
+              Importing...
+            </TooltipContent>
+          </Tooltip>
+        ): (
+          project?.updatedAt && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CloudCheckIcon className='size-4 text-muted-foreground' />
+                </TooltipTrigger>
+                <TooltipContent>
+                  Saved{" "}
+                  {formatDistanceToNow(project.updatedAt, 
+                    { addSuffix: true,}
+                  )}
+                </TooltipContent>
+              </Tooltip>
+          )
+        )}
       </div>
 
       <div className='flex items-center gap-2'>
