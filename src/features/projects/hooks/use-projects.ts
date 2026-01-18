@@ -52,4 +52,32 @@ export const useProject = (projectId: Id<"projects">) => {
   return useQuery(api.projects.getById, { id: projectId });
 };
 
+export const useRenameProject = (projectId: Id<"projects">) => {
+
+  return useMutation(api.projects.rename).withOptimisticUpdate(          
+    (localStore, args) => {                                              
+      const existingProject = localStore.getQuery(api.projects.getById, { id: projectId });        
+
+      if (existingProject !== undefined && existingProject !== null) {                                
+        localStore.setQuery(
+          api.projects.getById,
+          { id: projectId },
+          {
+            ...existingProject,
+            name: args.name,
+            updatedAt: Date.now(),
+          }
+        )
+       
+
+        // Basicamente aquí se interceptan los datos que la aplicación ya tiene en memoria para modificarlos visualmente de forma 
+        // temporal (optimista) antes de que el servidor confirme el cambio real.
+      }
+    }
+  )
+}
+
+
+
+
 
