@@ -58,6 +58,8 @@ export const useRenameProject = (projectId: Id<"projects">) => {
     (localStore, args) => {                                              
       const existingProject = localStore.getQuery(api.projects.getById, { id: projectId });        
 
+      // Actualizamos el detalle del proyecto con valores optimistas
+      // que luego el server actualizará
       if (existingProject !== undefined && existingProject !== null) {                                
         localStore.setQuery(
           api.projects.getById,
@@ -68,16 +70,23 @@ export const useRenameProject = (projectId: Id<"projects">) => {
             updatedAt: Date.now(),
           }
         )
-       
+      }
 
-        // Basicamente aquí se interceptan los datos que la aplicación ya tiene en memoria para modificarlos visualmente de forma 
-        // temporal (optimista) antes de que el servidor confirme el cambio real.
+      // Actualizamos tabien la lista general de proyectos 
+      // (independientemente de si tenemos el detalle cargado o no)
+      const existingProjects = localStore.getQuery(api.projects.get);        
+
+      if(existingProjects !== undefined) {
+        localStore.setQuery(
+          api.projects.get,
+          {},
+           existingProjects.map((project) => {
+            return project._id === args.id
+              ? { ...project, name: args.name, updatedAt: Date.now() }
+              : project;
+           })
+          )
       }
     }
   )
 }
-
-
-
-
-
