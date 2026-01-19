@@ -7,6 +7,7 @@ import { useState } from "react";
 import { set } from "date-fns";
 import { FaGithub } from "react-icons/fa";
 import { Allotment } from "allotment";
+import { FileExplorer } from "./file-explorer";
 
 
 
@@ -82,7 +83,9 @@ export const ProjectIdView = ({ projectId }: { projectId: Id<"projects"> }) => {
               maxSize={MAX_SIDEBAR_WIDTH}
               preferredSize={DEFAULT_SIDEBAR_WIDTH}
             >
-              <p>File explorer</p>
+              <FileExplorer 
+                projectId={projectId}
+              />
             </Allotment.Pane>
 
             <Allotment.Pane>
