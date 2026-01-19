@@ -7,6 +7,9 @@ import React, { useState } from 'react'
 import { Id } from '../../../../../convex/_generated/dataModel'
 import { useProject } from '../../hooks/use-projects'
 import { Button } from '@/components/ui/button'
+import { useCreateFile, useCreateFolder } from '../../hooks/use-files'
+import { set } from 'date-fns'
+import { CreateInput } from './create-input'
 
 export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
 
@@ -17,6 +20,27 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
 
   const project = useProject(projectId);
   if(!project) return null;
+
+  const createFile = useCreateFile();
+  const createFolder = useCreateFolder();
+
+  const handleCreate = (name: string) => {
+    setCreating(null);
+    if(creating === "file") {
+      createFile({
+        projectId,
+        name,
+        content: "",
+        parentId: undefined
+      })
+    }else{
+      createFolder({
+        projectId,
+        name,
+        parentId: undefined
+      })
+    }
+  }
 
 
   return (
@@ -44,7 +68,7 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
                 e.stopPropagation();
                 e.preventDefault()
                 setIsOpen(true);
-                // Set creating file
+                setCreating("file");
               }}
               variant="highlight"
               size="icon-xs"
@@ -57,7 +81,7 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
                 e.stopPropagation();
                 e.preventDefault()
                 setIsOpen(true);
-                // Set creating folder
+                setCreating("folder");
               }}
               variant="highlight"
               size="icon-xs"
@@ -78,6 +102,19 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
             </Button>
           </div>
         </div>
+
+        {isOpen && (
+          <>
+            {creating && (
+              <CreateInput 
+                type={creating}
+                level={0}
+                onSubmit={handleCreate}
+                onCancel={() => setCreating(null)}
+              />
+            )}
+          </>
+        )}
       </ScrollArea>
     </div>
   )
