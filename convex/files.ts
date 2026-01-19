@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { verifyAuth } from "./auth";
+import { Id } from "./_generated/dataModel";
 
 
 
@@ -136,7 +137,9 @@ export const createFile = mutation({
       updatedAt: Date.now(),
     })
 
-   
+    await ctx.db.patch("projects", args.projectId, {
+      updatedAt: Date.now(),
+    })
   }
 });
 
@@ -180,6 +183,10 @@ export const createFolder = mutation({
       name: args.name,
       type: "folder",
       parentId: args.parentId,
+      updatedAt: Date.now(),
+    })
+
+    await ctx.db.patch("projects", args.projectId, {
       updatedAt: Date.now(),
     })
   }
@@ -235,5 +242,114 @@ export const renameFile = mutation({
       name: args.newName,
       updatedAt: Date.now(),
     })
+
+    await ctx.db.patch("projects", file.projectId, {
+      updatedAt: Date.now(),
+    })
   }
+});
+
+
+export const deleteFile = mutation({
+  args: {
+    id: v.id("files"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await verifyAuth(ctx);
+
+    const file = await ctx.db.get("files", args.id);
+    if(!file) throw new Error("File not found")
+    
+    const project = await ctx.db.get("projects", file.projectId);
+    if(!project) {
+      throw new Error("Project not found")
+    }
+
+    if(project.ownerId !== identity.subject) {
+      throw new Error("Project not found")
+    }
+
+    // Recursively delete file/folder and all descendants
+    const deleteRecursive = async(fileId: Id<"files">) => {
+      const item = await ctx.db.get("files", fileId);            // Obtiene el archivo o carpeta en bd
+      if(!item) return
+
+      //If it's a folder, delete all children first
+      if(item.type === "folder") {                               // Si es una carpeta 
+        const children = await ctx.db                            // Busca todos los archivos que tienen como parentId el id de esta carpeta
+          .query("files")
+          .withIndex("by_project_parent", (q) => 
+            q
+            .eq("projectId", item.projectId)
+            .eq("parentId", fileId)
+          )
+          .collect()
+
+          for(const child of children) {                        // Recorre esta lista de hijos y se llama asi misma para cada uno de ellos
+            await deleteRecursive(child._id)                    // Esto asegura que lleguemos hasta el nivel más profundo del árbol de archivos antes de empezar a borrar.
+          }
+        }
+
+        // Delete storage file if it exists
+        if(item.storageId) {
+          await ctx.storage.delete(item.storageId)
+        }
+
+        // Delete the file/folder itself
+        await ctx.db.delete("files", fileId)
+    
+    }
+
+    await deleteRecursive(args.id);
+
+    await ctx.db.patch("projects", file.projectId, {
+      updatedAt: Date.now(),
+    })
+  }
+})
+
+/**
+ * Si intentas borrar la "Carpeta A":
+
+    1º deleteFile("Carpeta A") llama a deleteRecursive("Carpeta A").
+    2º Detecta que es carpeta y busca hijos. Encuentra "Archivo B".
+    3º Llama a deleteRecursive("Archivo B").
+        . "Archivo B" no es carpeta.
+        . Borra "Archivo B" del Storage (si tiene contenido).
+        . Borra "Archivo B" de la base de datos.
+    4º Vuelve a "Carpeta A". Ya no tiene hijos pendientes.
+    5º Borra "Carpeta A" de la base de datos.
+ */
+
+export const updateFile = mutation({
+  args: {
+    id: v.id("files"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await verifyAuth(ctx);
+
+    const file = await ctx.db.get("files", args.id);
+    if (!file) throw new Error("File not found")
+
+    const project = await ctx.db.get("projects", file.projectId);
+    if (!project) {
+      throw new Error("Project not found")
+    }
+
+    if (project.ownerId !== identity.subject) {
+      throw new Error("Project not found")
+    }
+
+    const now = Date.now();
+    
+    await ctx.db.patch("files", args.id, {
+      content: args.content,
+      updatedAt: now,
+    });
+
+    await ctx.db.patch("projects", file.projectId, {
+      updatedAt: now,
+    })
+  },
 })
