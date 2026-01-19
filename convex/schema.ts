@@ -25,6 +25,8 @@ export default defineSchema({
   }).index("by_owner", ["ownerId"])
     .index("by_owner_updatedAt", ["ownerId", "updatedAt"]),
 
+  // Tanto los archivos como las carpetas se almacenan en la misma tabla files 
+  // y se diferencian mediante el campo type.
   files: defineTable({
     projectId: v.id("projects"),
     parentId: v.optional(v.id("files")),
