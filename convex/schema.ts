@@ -23,5 +23,18 @@ export default defineSchema({
     ),
     exportReportUrl: v.optional(v.string()),
   }).index("by_owner", ["ownerId"])
-    .index("by_owner_updatedAt", ["ownerId", "updatedAt"])
+    .index("by_owner_updatedAt", ["ownerId", "updatedAt"]),
+
+  files: defineTable({
+    projectId: v.id("projects"),
+    parentId: v.optional(v.id("files")),
+    name: v.string(),
+    type: v.union(v.literal("file"), v.literal("folder")),
+    content: v.optional(v.string()), // Text file only
+    storageId: v.optional(v.id("storage")), // Binary files only
+    updatedAt: v.number(),
+  })
+  .index("by_project", ["projectId"])
+  .index("by_parent", ["parentId"])
+  .index("by_project_parent", ["projectId", "parentId"])
 });
