@@ -12,6 +12,14 @@ export const useCreateFolder = () => {
   return useMutation(api.files.createFolder)
 }
 
+export const useRenameFile = () => {
+  return useMutation(api.files.renameFile)
+}
+
+export const useDeleteFile = () => {
+  return useMutation(api.files.deleteFile)
+}
+
 export const useFolderContent = ({
   projectId,
   parentId,
