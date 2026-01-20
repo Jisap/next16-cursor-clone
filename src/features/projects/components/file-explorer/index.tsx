@@ -3,13 +3,15 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { ChevronRightIcon, CopyMinusIcon, FilePlusCornerIcon, FolderPlusIcon } from 'lucide-react'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Id } from '../../../../../convex/_generated/dataModel'
 import { useProject } from '../../hooks/use-projects'
 import { Button } from '@/components/ui/button'
-import { useCreateFile, useCreateFolder } from '../../hooks/use-files'
-import { set } from 'date-fns'
+import { useCreateFile, useCreateFolder, useFolderContent } from '../../hooks/use-files'
+
 import { CreateInput } from './create-input'
+import { LoadingRow } from './loading-row'
+import { Tree } from './tree'
 
 export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
 
@@ -17,12 +19,17 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
   const [collapseKey, setCollapseKey] = useState(0);
   const [creating, setCreating] = useState<"file" | "folder" | null>(null);
 
-
+  
   const project = useProject(projectId);
-  if(!project) return null;
+  const rootFiles = useFolderContent({
+    projectId,
+    enabled: isOpen // Se ejecuta la query si esta abierto el folder o file
+  })
 
   const createFile = useCreateFile();
   const createFolder = useCreateFolder();
+
+  if(!project) return null;
 
   const handleCreate = (name: string) => {
     setCreating(null);
@@ -105,6 +112,10 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
 
         {isOpen && (
           <>
+            {/* 1ª carga de datos */}
+            {rootFiles === undefined && <LoadingRow level={0} />}
+            
+            {/* input para creación de file/folder */}
             {creating && (
               <CreateInput 
                 type={creating}
@@ -113,6 +124,16 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
                 onCancel={() => setCreating(null)}
               />
             )}
+            
+            {/* 2º mapeo de los datos */}
+            {rootFiles?.map((item) => (
+              <Tree 
+                key={`${item._id}-${collapseKey}`}
+                item={item}
+                level={0}
+                projectId={projectId}
+              />
+            ))}
           </>
         )}
       </ScrollArea>
