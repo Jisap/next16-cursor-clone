@@ -38,11 +38,35 @@ export const Tree = ({
   const createFile = useCreateFile();
   const createFolder = useCreateFolder();
 
-  const folderContent = useFolderContent({      // Contenido de la tabla files
+  const folderContents = useFolderContent({      // Contenido de la tabla files
     projectId,
     parentId: item._id,
     enabled: item.type === "folder" && isOpen
   });
+
+  const handleCreate = (name:string) => {
+    setCreating(null)
+
+    if(creating === "file"){
+      createFile({
+        projectId,
+        name,
+        content: "",
+        parentId: item._id
+      })
+    } else {
+      createFolder({
+        projectId,
+        name,
+        parentId: item._id
+      })
+    }
+  }
+
+  const startCreating = (type: "file" | "folder") => {
+    setIsOpen(true);
+    setCreating(type);
+  }
 
   if(item.type === "file"){
 
@@ -70,9 +94,92 @@ export const Tree = ({
     )
   }
   
+  const folderName = item.name;
+
+  const folderContent = (
+    <>
+      <div className="flex items-center gap-2">
+        <ChevronRightIcon 
+          className={cn(
+            "size-4 shrink-0 text-muted-foreground",
+            isOpen && "rotate-90"
+          )}
+        />
+
+        <FolderIcon 
+          folderName={folderName}
+          className="size-4"
+        />
+        <span className="truncate text-sm">{folderName}</span>
+      </div>
+    </>
+  )
+
+  if(creating) {
+    return (
+      <>
+        <button
+          onClick={() => setIsOpen((value) => !value)}
+          className="group flex items-center gap-1 h-5.5 hover:bg-accent/30 w-full"
+          style={{ paddingLeft: getItemPadding(level, false) }}
+        >
+          {folderContent}
+        </button>
+
+        {isOpen && (
+          <>
+            {folderContents === undefined && <LoadingRow level={level + 1} />}
+            <CreateInput 
+              type={creating}
+              level={level + 1}
+              onSubmit={handleCreate}
+              onCancel={() => setCreating(null)}
+            />
+            {folderContents?.map((subItem) => (
+              <Tree 
+                key={subItem._id}
+                item={subItem}
+                level={level + 1}
+                projectId={projectId}
+              />
+            ))}
+          </>
+        )}
+      </>
+    )
+  }
+  
   return (
-    <div>
-      I am a folder
-    </div>
+    <>
+      <TreeItemWrapper
+        item={item}
+        level={level}
+        onClick={()=> setIsOpen((value) => !value)}
+        onRename={()=> setIsRenaming(true)}
+        onDelete={() => {
+          deleteFile({ id: item._id })
+        }}
+        onCreateFile={()=> startCreating("file")}
+        onCreateFolder={()=> startCreating("folder")}
+       >
+        {folderContent}
+       </TreeItemWrapper>
+
+       {isOpen && (
+        <>
+          {folderContents === undefined && <LoadingRow level={level + 1} />}
+          {folderContents?.map((subItem) => (
+            <Tree 
+              key={subItem._id}
+              item={subItem}
+              level={level + 1}
+              projectId={projectId}
+            />
+          ))}
+
+        </>
+
+       )}
+    </>
   )
 }
