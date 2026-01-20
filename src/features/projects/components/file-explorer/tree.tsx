@@ -16,20 +16,25 @@ import { useState } from "react"
 import { TreeItemWrapper } from "./tree-item-wrapper"
 import { fi } from "zod/v4/locales"
 
-
+/*
+Cada vez que renderizas una carpeta, este componente se encarga de:
+  - Mostrar la carpeta en sí.
+  - Si está abierta (isOpen), buscar sus hijos (archivos/carpetas dentro de ella).
+  - Por cada hijo encontrado, se vuelve a llamar a sí mismo (<Tree />), pero aumentando el level (nivel de profundidad) en 1.
+*/
 
 
 export const Tree = ({
-  item,
+  item,                     
   level = 0,
   projectId
 }:{
-  item: Doc<"files">;
-  level?: number;
-  projectId: Id<"projects">;
+  item: Doc<"files">;        // Data del archivo
+  level?: number;            // Su profundidad
+  projectId: Id<"projects">; // Id del proyecto al que pertenece
 }) => {
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);                                // Controla si todo el proyecto está colapsado o expandido.     
   const [isRenaming, setIsRenaming] = useState(false);
   const [creating, setCreating] = useState<"file" | "folder" | null>(null);
 
@@ -68,6 +73,10 @@ export const Tree = ({
     setCreating(type);
   }
 
+  // Si el item recibido es un archivo:
+  //   Renderiza el TreeItemWrapper 
+  //   Con el ícono del archivo. 
+  //   No tiene estado de apertura ni busca hijos
   if(item.type === "file"){
 
     const fileName = item.name;
@@ -149,6 +158,11 @@ export const Tree = ({
     )
   }
   
+  // Si el item recibido es carpeta:
+  //   Tiene estado isOpen
+  //   Carga perezosa con useFolderContent pasando el item._id como parentId
+  //   La query a la base de datos tiene la condición enabled: isOpen -> Esto significa que no se descargan los datos de la subcarpeta hasta que el usuario la abre. Esto hace que la aplicación sea muy rápida aunque tengas miles de archivos.
+  //   Recursividad: Cuando isOpen es true, hace un .map() sobre los hijos (folderContents) y renderiza <Tree level={level + 1} /> para cada uno.
   return (
     <>
       <TreeItemWrapper

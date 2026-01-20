@@ -15,15 +15,15 @@ import { Tree } from './tree'
 
 export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);                              // Controla si todo el proyecto está colapsado o expandido.
   const [collapseKey, setCollapseKey] = useState(0);
   const [creating, setCreating] = useState<"file" | "folder" | null>(null);
 
   
   const project = useProject(projectId);
-  const rootFiles = useFolderContent({
+  const rootFiles = useFolderContent({                                      // Se carga el contenido con el parentId = undefined -> archivos de la raiz
     projectId,
-    enabled: isOpen // Se ejecuta la query si esta abierto el folder o file
+    enabled: isOpen                                                         // Se ejecuta la query si esta abierto el folder o file
   })
 
   const createFile = useCreateFile();
@@ -110,7 +110,7 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
           </div>
         </div>
 
-        {isOpen && (
+        {isOpen && ( // Si es true se muestra la lista de rootFiles
           <>
             {/* 1ª carga de datos */}
             {rootFiles === undefined && <LoadingRow level={0} />}
@@ -126,6 +126,8 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
             )}
             
             {/* 2º mapeo de los datos */}
+            {/* Se carga solo los archivos y carpetas de nivel superior donde parentId = undefined */}
+            {/* Por cada archivo/carpeta se renderiza un componente Tree */}
             {rootFiles?.map((item) => (
               <Tree 
                 key={`${item._id}-${collapseKey}`}

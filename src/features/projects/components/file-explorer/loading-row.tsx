@@ -2,7 +2,10 @@ import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 import { getItemPadding } from "./constants"
 
-
+/*
+  Se muestra mientras useFolderContent está cargando (cuando devuelve undefined).
+  También usa getItemPadding para que el spinner de carga aparezca indentado correctamente dentro de la carpeta que estás abriendo.
+*/
 
 export const LoadingRow = ({
   className,

@@ -11,6 +11,13 @@ import {
 import { getItemPadding } from "./constants";
 import { Doc } from "../../../../../convex/_generated/dataModel";
 
+/*
+  Es el componente de presentación puro.
+  Maneja los eventos de ratón: onClick (para abrir/cerrar carpetas), onContextMenu (para mostrar opciones de renombrar/borrar).
+  Aplica los estilos de "hover" y "activo".
+  Envuelve el contenido visual (iconos y texto) y aplica el padding-left calculado.
+*/
+
 
 export const TreeItemWrapper = ({
   item,
@@ -102,5 +109,12 @@ export const TreeItemWrapper = ({
   )
 }
 
+/* Resumen del flujo de datos
+  1º Usuario abre el proyecto -> index.tsx carga archivos nivel 0.
+  2º Usuario hace clic en la carpeta "src"(Nivel 0) -> tree.tsx cambia isOpen a true.
+  3º useFolderContent detecta isOpen y descarga los archivos con parentId = id_de_src.
+  4º tree.tsx renderiza los hijos recibidos, pasando level = { 1}.
+  5º Si uno de esos hijos es otra carpeta y se abre, el proceso se repite con level = { 2}, y así sucesivamente.
+*/
 
 

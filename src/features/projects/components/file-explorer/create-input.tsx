@@ -3,7 +3,12 @@ import { ChevronRightIcon, FilesIcon } from "lucide-react";
 import { useState } from "react";
 import { getItemPadding } from "./constants";
 
-
+/*
+  Es el input temporal que aparece cuando creas un archivo.
+    Responsabilidad: Capturar el nombre y validar.
+    Estilo: Usa getItemPadding para que el input aparezca alineado exactamente donde aparecerá el nuevo archivo, manteniendo la coherencia visual.
+    Eventos: Al perder el foco (onBlur) o presionar Enter, llama a onSubmit para crear el archivo real en la base de datos.
+*/
 
 export const CreateInput = ({
   type,
