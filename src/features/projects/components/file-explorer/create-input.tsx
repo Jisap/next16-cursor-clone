@@ -16,7 +16,7 @@ export const CreateInput = ({
   onSubmit, // handleCreate
   onCancel
 }: {
-  type: "file" | "folder" | null;
+  type: "file" | "folder";
   level: number;
   onSubmit: (name: string) => void;
   onCancel: () => void;

@@ -9,7 +9,7 @@ export const useProjects = () => {
   return useQuery(api.projects.get);
 }
 
-export const useProjectsPartial = (limit:number) => {
+export const useProjectsPartial = (limit: number) => {
   return useQuery(api.projects.getPartial, {
     limit,
   });
@@ -26,7 +26,7 @@ export const useCreateProject = () => {
     (localStore, args) => {                                              // 2. Obtiene el estado actual
       const existingProjects = localStore.getQuery(api.projects.get);        // Busca en la caché local los datos de una consulta get que haya hecho
 
-      if(existingProjects !== undefined){                                // 3. Solo procedemos si la lista de proyectos esta cargada en memoria
+      if (existingProjects !== undefined) {                                // 3. Solo procedemos si la lista de proyectos esta cargada en memoria
         const now = Date.now();                                              // Si si lo esta cargada obtenemos la fecha actual
         const newProject = {                                                 // y se la aplicamos al objeto temporal (optimista)
           _id: crypto.randomUUID() as Id<"projects">,                             // Con id random
@@ -52,18 +52,18 @@ export const useProject = (projectId: Id<"projects">) => {
   return useQuery(api.projects.getById, { id: projectId });
 };
 
-export const useRenameProject = (projectId: Id<"projects">) => {
+export const useRenameProject = () => {
 
-  return useMutation(api.projects.rename).withOptimisticUpdate(          
-    (localStore, args) => {                                              
-      const existingProject = localStore.getQuery(api.projects.getById, { id: projectId });        
+  return useMutation(api.projects.rename).withOptimisticUpdate(
+    (localStore, args) => {
+      const existingProject = localStore.getQuery(api.projects.getById, { id: args.id });
 
       // Actualizamos el detalle del proyecto con valores optimistas
       // que luego el server actualizará
-      if (existingProject !== undefined && existingProject !== null) {                                
+      if (existingProject !== undefined && existingProject !== null) {
         localStore.setQuery(
           api.projects.getById,
-          { id: projectId },
+          { id: args.id },
           {
             ...existingProject,
             name: args.name,
@@ -74,18 +74,18 @@ export const useRenameProject = (projectId: Id<"projects">) => {
 
       // Actualizamos tabien la lista general de proyectos 
       // (independientemente de si tenemos el detalle cargado o no)
-      const existingProjects = localStore.getQuery(api.projects.get);        
+      const existingProjects = localStore.getQuery(api.projects.get);
 
-      if(existingProjects !== undefined) {
+      if (existingProjects !== undefined) {
         localStore.setQuery(
           api.projects.get,
           {},
-           existingProjects.map((project) => {
+          existingProjects.map((project) => {
             return project._id === args.id
               ? { ...project, name: args.name, updatedAt: Date.now() }
               : project;
-           })
-          )
+          })
+        )
       }
     }
   )

@@ -34,23 +34,23 @@ const font = Poppins({
 export const Navbar = ({ projectId }: { projectId: Id<'projects'> }) => {
 
   const project = useProject(projectId);
-  const renameProject = useRenameProject(projectId);
+  const renameProject = useRenameProject();
 
   const [isRenaming, setIsRenaming] = useState(false);
   const [name, setName] = useState("");
 
   const handleStartRename = () => {
-    if(!project) return;
+    if (!project) return;
     setName(project.name);
     setIsRenaming(true);
   };
 
   const handleSubmit = () => {
-    if(!project) return; 
+    if (!project) return;
     setIsRenaming(false);
 
     const trimmedName = name.trim();
-    if(!trimmedName || trimmedName === project?.name) return;
+    if (!trimmedName || trimmedName === project?.name) return;
 
     renameProject({
       id: projectId,
@@ -59,13 +59,13 @@ export const Navbar = ({ projectId }: { projectId: Id<'projects'> }) => {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if(e.key === "Enter") {
+    if (e.key === "Enter") {
       handleSubmit();
-    }else if(e.key === "Escape") {
+    } else if (e.key === "Escape") {
       setIsRenaming(false);
     }
   }
-  
+
 
 
 
@@ -82,9 +82,9 @@ export const Navbar = ({ projectId }: { projectId: Id<'projects'> }) => {
                   asChild
                 >
                   <Link href="/">
-                    <Image 
-                      src="/logo.svg" 
-                      alt="logo" 
+                    <Image
+                      src="/logo.svg"
+                      alt="logo"
                       width={20}
                       height={20}
                     />
@@ -100,13 +100,13 @@ export const Navbar = ({ projectId }: { projectId: Id<'projects'> }) => {
             </BreadcrumbItem>
 
             <BreadcrumbSeparator className='ml-0! mr-1' />
-            
+
             <BreadcrumbItem>
               {isRenaming ? (
-                <input 
+                <input
                   autoFocus
-                  type="text" 
-                  value={name} 
+                  type="text"
+                  value={name}
                   onChange={(e) => setName(e.target.value)}
                   onFocus={(e) => e.currentTarget.select()}
                   onBlur={handleSubmit}
@@ -135,16 +135,16 @@ export const Navbar = ({ projectId }: { projectId: Id<'projects'> }) => {
               Importing...
             </TooltipContent>
           </Tooltip>
-        ): (
+        ) : (
           <Tooltip>
             <TooltipTrigger asChild>
               <CloudCheckIcon className='size-4 text-muted-foreground' />
             </TooltipTrigger>
             <TooltipContent>
               Saved{" "}
-              {project?.updatedAt 
-                ? formatDistanceToNow(project.updatedAt, 
-                  { addSuffix: true,})
+              {project?.updatedAt
+                ? formatDistanceToNow(project.updatedAt,
+                  { addSuffix: true, })
                 : ("unknown")
               }
             </TooltipContent>
