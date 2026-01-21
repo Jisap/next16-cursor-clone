@@ -197,12 +197,7 @@ export const Tree = ({
         {isOpen && (
           <>
             {folderContents === undefined && <LoadingRow level={level + 1} />}
-            <CreateInput
-              type={creating}
-              level={level + 1}
-              onSubmit={handleCreate}
-              onCancel={() => setCreating(null)}
-            />
+
             {folderContents?.map((subItem) => (
               <Tree
                 key={subItem._id}
