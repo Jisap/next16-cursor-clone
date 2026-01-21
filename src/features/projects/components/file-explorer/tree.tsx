@@ -125,6 +125,8 @@ export const Tree = ({
     )
   }
 
+
+  // De aquí en adelante solo se manejan carpetas
   const folderName = item.name;
 
   const folderRender = ( // Contenido expecífico de cada folder
@@ -156,6 +158,41 @@ export const Tree = ({
         >
           {folderRender}
         </button>
+
+        {isOpen && (
+          <>
+            {folderContents === undefined && <LoadingRow level={level + 1} />}
+            <CreateInput
+              type={creating}
+              level={level + 1}
+              onSubmit={handleCreate}
+              onCancel={() => setCreating(null)}
+            />
+            {folderContents?.map((subItem) => (
+              <Tree
+                key={subItem._id}
+                item={subItem}
+                level={level + 1}
+                projectId={projectId}
+              />
+            ))}
+          </>
+        )}
+      </>
+    )
+  }
+
+  if (isRenaming) {
+    return (
+      <>
+        <RenameInput
+          type="folder"
+          defaultValue={folderName}
+          isOpen={isOpen}
+          level={level}
+          onSubmit={handleRename}
+          onCancel={() => setIsRenaming(false)}
+        />
 
         {isOpen && (
           <>

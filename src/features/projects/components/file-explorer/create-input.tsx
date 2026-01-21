@@ -15,8 +15,8 @@ export const CreateInput = ({
   level,
   onSubmit, // handleCreate
   onCancel
-}:{
-  type: "file" | "folder";
+}: {
+  type: "file" | "folder" | null;
   level: number;
   onSubmit: (name: string) => void;
   onCancel: () => void;
@@ -27,15 +27,15 @@ export const CreateInput = ({
   const handleSubmit = () => {
     const trimmedValue = value.trim();
 
-    if(trimmedValue){
+    if (trimmedValue) {
       onSubmit(trimmedValue);
-    }else{
+    } else {
       onCancel();
     }
   }
-  
+
   return (
-    <div 
+    <div
       className="w-full flex items-center gap-1 h-5.5 bg-accent/30"
       style={{ paddingLeft: getItemPadding(level, type === "file") }}
     >
@@ -45,22 +45,22 @@ export const CreateInput = ({
         )}
 
         {type === "file" && (
-          <FileIcon 
+          <FileIcon
             fileName={value}     // FileIcon detecta la extension mientras escribes
             autoAssign
-            className="size-4"  
+            className="size-4"
           />
         )}
 
         {type === "folder" && (
-          <FolderIcon 
-            className="size-4" 
+          <FolderIcon
+            className="size-4"
             folderName={value}
-          /> 
+          />
         )}
       </div>
 
-      <input 
+      <input
         autoFocus
         type="text"
         value={value}
@@ -68,10 +68,10 @@ export const CreateInput = ({
         className="flex-1 bg-transparent text-sm outline-none focus:ring-1 focus:ring-inset focus:ring-ring"
         onBlur={handleSubmit}
         onKeyDown={(e) => {
-          if(e.key === "Enter"){
+          if (e.key === "Enter") {
             handleSubmit();
           }
-          if(e.key === "Escape"){
+          if (e.key === "Escape") {
             onCancel();
           }
         }}
