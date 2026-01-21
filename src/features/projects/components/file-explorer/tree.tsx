@@ -15,6 +15,7 @@ import type { Doc, Id } from "../../../../../convex/_generated/dataModel"
 import { useState } from "react"
 import { TreeItemWrapper } from "./tree-item-wrapper"
 import { fi } from "zod/v4/locales"
+import { RenameInput } from "./rename-input"
 
 /*
 Cada vez que renderizas una carpeta, este componente se encarga de:
@@ -25,10 +26,10 @@ Cada vez que renderizas una carpeta, este componente se encarga de:
 
 
 export const Tree = ({
-  item,                     
+  item,
   level = 0,
   projectId
-}:{
+}: {
   item: Doc<"files">;        // Data del archivo
   level?: number;            // Su profundidad
   projectId: Id<"projects">; // Id del proyecto al que pertenece
@@ -49,10 +50,10 @@ export const Tree = ({
     enabled: item.type === "folder" && isOpen
   });
 
-  const handleCreate = (name:string) => {
+  const handleCreate = (name: string) => {
     setCreating(null)
 
-    if(creating === "file"){
+    if (creating === "file") {
       createFile({
         projectId,
         name,
@@ -68,6 +69,15 @@ export const Tree = ({
     }
   }
 
+  const handleRename = (newName: string) => {
+    setIsRenaming(false);
+    if (newName === item.name) {
+      return
+    }
+
+    renameFile({ id: item._id, newName });
+  }
+
   const startCreating = (type: "file" | "folder") => {
     setIsOpen(true);
     setCreating(type);
@@ -77,23 +87,35 @@ export const Tree = ({
   //   Renderiza el TreeItemWrapper 
   //   Con el ícono del archivo. 
   //   No tiene estado de apertura ni busca hijos
-  if(item.type === "file"){
+  if (item.type === "file") {
 
     const fileName = item.name;
+
+    if (isRenaming) {
+      return (
+        <RenameInput
+          type="file"
+          defaultValue={fileName}
+          level={level}
+          onSubmit={handleRename}
+          onCancel={() => setIsRenaming(false)}
+        />
+      )
+    }
 
     return (
       <TreeItemWrapper
         item={item}
         level={level}
         isActive={false}
-        onClick={() => {}}
-        onDoubleClick={() => {}}
+        onClick={() => { }}
+        onDoubleClick={() => { }}
         onRename={() => setIsRenaming(true)}
         onDelete={() => {
           deleteFile({ id: item._id })
         }}
       >
-        <FileIcon 
+        <FileIcon
           fileName={fileName}
           autoAssign
           className="size-4"
@@ -102,20 +124,20 @@ export const Tree = ({
       </TreeItemWrapper>
     )
   }
-  
+
   const folderName = item.name;
 
-  const folderContent = (
+  const folderRender = ( // Contenido expecífico de cada folder
     <>
       <div className="flex items-center gap-2">
-        <ChevronRightIcon 
+        <ChevronRightIcon
           className={cn(
             "size-4 shrink-0 text-muted-foreground",
             isOpen && "rotate-90"
           )}
         />
 
-        <FolderIcon 
+        <FolderIcon
           folderName={folderName}
           className="size-4"
         />
@@ -124,7 +146,7 @@ export const Tree = ({
     </>
   )
 
-  if(creating) {
+  if (creating) {
     return (
       <>
         <button
@@ -132,20 +154,20 @@ export const Tree = ({
           className="group flex items-center gap-1 h-5.5 hover:bg-accent/30 w-full"
           style={{ paddingLeft: getItemPadding(level, false) }}
         >
-          {folderContent}
+          {folderRender}
         </button>
 
         {isOpen && (
           <>
             {folderContents === undefined && <LoadingRow level={level + 1} />}
-            <CreateInput 
+            <CreateInput
               type={creating}
               level={level + 1}
               onSubmit={handleCreate}
               onCancel={() => setCreating(null)}
             />
             {folderContents?.map((subItem) => (
-              <Tree 
+              <Tree
                 key={subItem._id}
                 item={subItem}
                 level={level + 1}
@@ -157,7 +179,7 @@ export const Tree = ({
       </>
     )
   }
-  
+
   // Si el item recibido es carpeta:
   //   Tiene estado isOpen
   //   Carga perezosa con useFolderContent pasando el item._id como parentId
@@ -168,22 +190,22 @@ export const Tree = ({
       <TreeItemWrapper
         item={item}
         level={level}
-        onClick={()=> setIsOpen((value) => !value)}
-        onRename={()=> setIsRenaming(true)}
+        onClick={() => setIsOpen((value) => !value)}
+        onRename={() => setIsRenaming(true)}
         onDelete={() => {
           deleteFile({ id: item._id })
         }}
-        onCreateFile={()=> startCreating("file")}
-        onCreateFolder={()=> startCreating("folder")}
-       >
-        {folderContent}
-       </TreeItemWrapper>
+        onCreateFile={() => startCreating("file")}
+        onCreateFolder={() => startCreating("folder")}
+      >
+        {folderRender}
+      </TreeItemWrapper>
 
-       {isOpen && (
+      {isOpen && (
         <>
           {folderContents === undefined && <LoadingRow level={level + 1} />}
           {folderContents?.map((subItem) => (
-            <Tree 
+            <Tree
               key={subItem._id}
               item={subItem}
               level={level + 1}
@@ -193,7 +215,7 @@ export const Tree = ({
 
         </>
 
-       )}
+      )}
     </>
   )
 }
