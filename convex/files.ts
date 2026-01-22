@@ -1,22 +1,22 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { verifyAuth } from "./auth";
-import { Id } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
 
 
 
 export const getFiles = query({
-  args: { projectId: v.id("projects")},
+  args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
     const identity = await verifyAuth(ctx);
 
     const project = await ctx.db.get("projects", args.projectId);
 
-    if (!project){
+    if (!project) {
       throw new Error("Project not found")
     }
 
-    if (project.ownerId !== identity.subject){
+    if (project.ownerId !== identity.subject) {
       throw new Error("Unauthorized")
     }
 
@@ -28,21 +28,21 @@ export const getFiles = query({
 });
 
 export const getFile = query({
-  args: { id: v.id("files")},
+  args: { id: v.id("files") },
   handler: async (ctx, args) => {
     const identity = await verifyAuth(ctx);
 
     const file = await ctx.db.get("files", args.id);
-    if (!file){
+    if (!file) {
       throw new Error("File not found")
     }
 
     const project = await ctx.db.get("projects", file.projectId);
-    if (!project){
+    if (!project) {
       throw new Error("Project not found")
     }
 
-    if (project.ownerId !== identity.subject){
+    if (project.ownerId !== identity.subject) {
       throw new Error("Unauthorized")
     }
 
@@ -54,9 +54,9 @@ export const getFile = query({
 
 // Obtiene el contenido de una carpeta específica dentro de un proyecto.
 export const getFolderContent = query({
-  args: { 
+  args: {
     projectId: v.id("projects"),
-    parentId: v.optional(v.id("files")) 
+    parentId: v.optional(v.id("files"))
   },
   handler: async (ctx, args) => {
     const identity = await verifyAuth(ctx);
@@ -73,7 +73,7 @@ export const getFolderContent = query({
 
     const files = await ctx.db
       .query("files")
-      .withIndex("by_project_parent", (q) => 
+      .withIndex("by_project_parent", (q) =>
         q
           .eq("projectId", args.projectId)
           .eq("parentId", args.parentId)
@@ -83,19 +83,59 @@ export const getFolderContent = query({
     // Sort: folders first, then files, alphabetically within each group
     return files.sort((a, b) => {
       // Folders come before files
-      if(a.type === "folder" && b.type === "file") return -1
-      if(a.type === "file" && b.type === "folder") return 1;
-    
+      if (a.type === "folder" && b.type === "file") return -1
+      if (a.type === "file" && b.type === "folder") return 1;
+
       //Within same type, sort alphabetically by name
       return a.name.localeCompare(b.name);
     })
   }
 });
 
+// Build the full path to a file by traversiing up the parent chain
+// Input : A file ID
+// Output: Array of ancestors from root to file: [{_id, name: "src"}, {_id, name: "components"}, {_id, name: "button.tsx"}]
+// Used for: Breadcrumbs navigation (src > components > button.tsx)
+export const getFilePath = query({
+  args: { id: v.id("files") },                                      // Input: Un ID de archivo que queremos conocer su ruta
+  handler: async (ctx, args) => {
+    const identity = await verifyAuth(ctx);                         // Verifica que el usuario esté autenticado
+
+    const file = await ctx.db.get("files", args.id);                // Obtenemos el archivo desde la bd
+    if (!file) {
+      throw new Error("File not found")
+    }
+
+    const project = await ctx.db.get("projects", file.projectId);   // Obtenemos el proyecto al que pertenece el archivo
+    if (!project) {
+      throw new Error("Project not found")
+    }
+
+    if (project.ownerId !== identity.subject) {                     // Verificamos que el usuario tenga permiso para acceder al archivo
+      throw new Error("Unauthorized")
+    }
+
+    const path: { _id: string; name: string }[] = [];               // Array para almacenar la ruta del archivo
+    let currentId: Id<"files"> | undefined = args.id;               // ID del archivo actual que queremos conocer su ruta
+
+    while (currentId) {
+      const file = (await ctx.db.get("files", currentId)) as        // 1º obtenemos el archivo/carpeta actual
+        | Doc<"files">
+        | undefined;
+      if (!file) break;
+
+      path.unshift({ _id: file._id, name: file.name });             // 2º Lo insertamos al principio del array   
+      currentId = file.parentId;                                    // 3º Nos movemos al padre para siguiente iteración
+    }
+
+    return path;
+  }
+});
+
 export const createFile = mutation({
-  args: { 
+  args: {
     projectId: v.id("projects"),
-    parentId: v.optional(v.id("files")) ,
+    parentId: v.optional(v.id("files")),
     name: v.string(),
     content: v.string(),
   },
@@ -114,19 +154,19 @@ export const createFile = mutation({
 
     const files = await ctx.db
       .query("files")
-      .withIndex("by_project_parent", (q) => 
+      .withIndex("by_project_parent", (q) =>
         q
-      .eq("projectId", args.projectId)
-      .eq("parentId", args.parentId)
-    )
-    .collect();
-  
+          .eq("projectId", args.projectId)
+          .eq("parentId", args.parentId)
+      )
+      .collect();
+
     // Check if file with same name already exists in this parent folder
     const existing = files.find(
       (file) => file.name === args.name && file.type === "file"
     )
 
-    if(existing) throw new Error("File already exists")
+    if (existing) throw new Error("File already exists")
 
     await ctx.db.insert("files", {
       projectId: args.projectId,
@@ -144,9 +184,9 @@ export const createFile = mutation({
 });
 
 export const createFolder = mutation({
-  args: { 
+  args: {
     projectId: v.id("projects"),
-    parentId: v.optional(v.id("files")) ,
+    parentId: v.optional(v.id("files")),
     name: v.string(),
   },
   handler: async (ctx, args) => {
@@ -164,19 +204,19 @@ export const createFolder = mutation({
 
     const files = await ctx.db
       .query("files")
-      .withIndex("by_project_parent", (q) => 
+      .withIndex("by_project_parent", (q) =>
         q
-      .eq("projectId", args.projectId)
-      .eq("parentId", args.parentId)
-    )
-    .collect();
-  
+          .eq("projectId", args.projectId)
+          .eq("parentId", args.parentId)
+      )
+      .collect();
+
     // Check if folder with same name already exists in this parent folder
     const existing = files.find(
       (file) => file.name === args.name && file.type === "folder"
     )
 
-    if(existing) throw new Error("Folder already exists")
+    if (existing) throw new Error("Folder already exists")
 
     await ctx.db.insert("files", {
       projectId: args.projectId,
@@ -201,14 +241,14 @@ export const renameFile = mutation({
     const identity = await verifyAuth(ctx);
 
     const file = await ctx.db.get("files", args.id);
-    if(!file) throw new Error("File not found")
-    
+    if (!file) throw new Error("File not found")
+
     const project = await ctx.db.get("projects", file.projectId);
-    if(!project) {
+    if (!project) {
       throw new Error("Project not found")
     }
 
-    if(project.ownerId !== identity.subject) {
+    if (project.ownerId !== identity.subject) {
       throw new Error("Project not found")
     }
 
@@ -216,12 +256,12 @@ export const renameFile = mutation({
     // que el archivo que estás intentando renombrar. Es decir, traes a todos sus "hermanos". 
     const siblings = await ctx.db
       .query("files")
-      .withIndex("by_project_parent", (q) => 
+      .withIndex("by_project_parent", (q) =>
         q
-        .eq("projectId", file.projectId)
-        .eq("parentId", file.parentId)
-    )
-    .collect();
+          .eq("projectId", file.projectId)
+          .eq("parentId", file.parentId)
+      )
+      .collect();
 
     // Aqui se recorre la lista de hermanos
     const existing = siblings.find(               // Buscamos en la lista
@@ -229,9 +269,9 @@ export const renameFile = mutation({
         sibling.name === args.newName &&          // cuyo nombre === args.newName
         sibling.type === file.type &&             // y que sea del mismo tipo
         sibling._id !== args.id                   // y que no sea el mismo archivo
-      )
+    )
 
-    if(existing) {                                // Si existe lanzamos error 
+    if (existing) {                                // Si existe lanzamos error 
       throw new Error(
         `A ${file.type} with this name already exists in this folder`
       )
@@ -258,46 +298,46 @@ export const deleteFile = mutation({
     const identity = await verifyAuth(ctx);
 
     const file = await ctx.db.get("files", args.id);
-    if(!file) throw new Error("File not found")
-    
+    if (!file) throw new Error("File not found")
+
     const project = await ctx.db.get("projects", file.projectId);
-    if(!project) {
+    if (!project) {
       throw new Error("Project not found")
     }
 
-    if(project.ownerId !== identity.subject) {
+    if (project.ownerId !== identity.subject) {
       throw new Error("Project not found")
     }
 
     // Recursively delete file/folder and all descendants
-    const deleteRecursive = async(fileId: Id<"files">) => {
+    const deleteRecursive = async (fileId: Id<"files">) => {
       const item = await ctx.db.get("files", fileId);            // Obtiene el archivo o carpeta en bd
-      if(!item) return
+      if (!item) return
 
       //If it's a folder, delete all children first
-      if(item.type === "folder") {                               // Si es una carpeta 
+      if (item.type === "folder") {                               // Si es una carpeta 
         const children = await ctx.db                            // Busca todos los archivos que tienen como parentId el id de esta carpeta
           .query("files")
-          .withIndex("by_project_parent", (q) => 
+          .withIndex("by_project_parent", (q) =>
             q
-            .eq("projectId", item.projectId)
-            .eq("parentId", fileId)
+              .eq("projectId", item.projectId)
+              .eq("parentId", fileId)
           )
           .collect()
 
-          for(const child of children) {                        // Recorre esta lista de hijos y se llama asi misma para cada uno de ellos
-            await deleteRecursive(child._id)                    // Esto asegura que lleguemos hasta el nivel más profundo del árbol de archivos antes de empezar a borrar.
-          }
+        for (const child of children) {                        // Recorre esta lista de hijos y se llama asi misma para cada uno de ellos
+          await deleteRecursive(child._id)                    // Esto asegura que lleguemos hasta el nivel más profundo del árbol de archivos antes de empezar a borrar.
         }
+      }
 
-        // Delete storage file if it exists
-        if(item.storageId) {
-          await ctx.storage.delete(item.storageId)
-        }
+      // Delete storage file if it exists
+      if (item.storageId) {
+        await ctx.storage.delete(item.storageId)
+      }
 
-        // Delete the file/folder itself
-        await ctx.db.delete("files", fileId)
-    
+      // Delete the file/folder itself
+      await ctx.db.delete("files", fileId)
+
     }
 
     await deleteRecursive(args.id);
@@ -342,7 +382,7 @@ export const updateFile = mutation({
     }
 
     const now = Date.now();
-    
+
     await ctx.db.patch("files", args.id, {
       content: args.content,
       updatedAt: now,
