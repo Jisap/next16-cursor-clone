@@ -16,6 +16,7 @@ import { useState } from "react"
 import { TreeItemWrapper } from "./tree-item-wrapper"
 import { fi } from "zod/v4/locales"
 import { RenameInput } from "./rename-input"
+import { useEditor } from "@/features/editor/hooks/use-editor"
 
 /*
 Cada vez que renderizas una carpeta, este componente se encarga de:
@@ -43,6 +44,12 @@ export const Tree = ({
   const deleteFile = useDeleteFile();
   const createFile = useCreateFile();
   const createFolder = useCreateFolder();
+
+  const {
+    openFile,
+    closeTab,
+    activeTabId
+  } = useEditor(projectId);                      // Estado global de tabs para el projectId seleccionado
 
   const folderContents = useFolderContent({      // Contenido de la tabla files
     projectId,
@@ -90,6 +97,7 @@ export const Tree = ({
   if (item.type === "file") {
 
     const fileName = item.name;
+    const isActive = activeTabId === item._id; // Si el id de la tab = al id del item, es active
 
     if (isRenaming) {
       return (
@@ -107,12 +115,13 @@ export const Tree = ({
       <TreeItemWrapper
         item={item}
         level={level}
-        isActive={false}
-        onClick={() => { }}
-        onDoubleClick={() => { }}
+        isActive={isActive}
+        onClick={() => openFile(item._id, { pinned: false })}
+        onDoubleClick={() => openFile(item._id, { pinned: true })}
         onRename={() => setIsRenaming(true)}
         onDelete={() => {
-          deleteFile({ id: item._id })
+          closeTab(item._id);
+          deleteFile({ id: item._id });
         }}
       >
         <FileIcon
