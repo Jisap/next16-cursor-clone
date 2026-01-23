@@ -1,14 +1,22 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { basicSetup, EditorView } from 'codemirror'
 import { javascript } from "@codemirror/lang-javascript"
 import { oneDark } from "@codemirror/theme-one-dark"
 import { customTheme } from '../extensions/theme'
+import { getLanguageExtension } from '../extensions/language-extension'
 
 
-export const CodeEditor = () => {
+interface Props {
+  fileName: string;
+}
+
+
+export const CodeEditor = ({ fileName }: Props) => {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+
+  const languageExtension = useMemo(() => getLanguageExtension(fileName), [fileName])
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -31,7 +39,7 @@ export const CodeEditor = () => {
         oneDark,
         customTheme,
         basicSetup,
-        javascript({ typescript: true })
+        languageExtension
       ]
     });
 
