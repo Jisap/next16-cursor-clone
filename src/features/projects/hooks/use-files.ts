@@ -23,7 +23,7 @@ export const useDeleteFile = () => {
 export const useFolderContent = ({
   projectId,
   parentId,
-  enabled=true,
+  enabled = true,
 }: {
   projectId: Id<"projects">;
   parentId?: Id<"files">;
@@ -33,4 +33,12 @@ export const useFolderContent = ({
     api.files.getFolderContent,
     enabled ? { projectId, parentId } : "skip" // Se ejecuta esta query si enabled es true
   )
+}
+
+export const useFile = (fileId: Id<"files"> | null) => {
+  return useQuery(api.files.getFile, fileId ? { id: fileId } : "skip")   // Busca en la tabla "files" el documento con el id que le pasamos y si existe lo devuelve
+}
+
+export const useFilePath = (fileId: Id<"files"> | null) => {
+  return useQuery(api.files.getFilePath, fileId ? { id: fileId } : "skip") // Devuelve un array con la ruta del archivo
 }
