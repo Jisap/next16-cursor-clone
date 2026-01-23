@@ -5,6 +5,7 @@ import { FileBreadcrumbs } from "./file-breadcrumbs";
 
 import { TopNavigation } from "./top-navigation"
 import Image from "next/image";
+import { CodeEditor } from "./code-editor";
 
 
 
@@ -34,6 +35,10 @@ export const EditorView = ({ projectId }: { projectId: Id<"projects"> }) => {
               className="opacity-50"
             />
           </div>
+        )}
+
+        {activeFile && (
+          <CodeEditor />
         )}
       </div>
     </div>
