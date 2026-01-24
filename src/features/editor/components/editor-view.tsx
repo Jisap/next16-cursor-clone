@@ -6,7 +6,7 @@ import { FileBreadcrumbs } from "./file-breadcrumbs";
 import { TopNavigation } from "./top-navigation"
 import Image from "next/image";
 import { CodeEditor } from "./code-editor";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 const DEBOUNCE_MS = 1500;
 
@@ -21,6 +21,14 @@ export const EditorView = ({ projectId }: { projectId: Id<"projects"> }) => {
 
   const isActiveFileBinary = activeFile && activeFile.storageId;  // Los archivos binarios si tinenen storageId
   const isActiveFileText = activeFile && !activeFile.storageId;   // Los archivos de texto no tienen storageId
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [activeTabId]);
 
   return (
     <div className="h-full flex flex-col">
