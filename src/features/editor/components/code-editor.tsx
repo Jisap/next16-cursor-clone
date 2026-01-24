@@ -11,10 +11,12 @@ import { customSetup } from '../extensions/custom-setup'
 
 interface Props {
   fileName: string;
+  initialValue: string;
+  onChange: (value: string) => void;
 }
 
 
-export const CodeEditor = ({ fileName }: Props) => {
+export const CodeEditor = ({ fileName, initialValue, onChange }: Props) => {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -25,18 +27,7 @@ export const CodeEditor = ({ fileName }: Props) => {
     if (!editorRef.current) return;
 
     const view = new EditorView({
-      doc: `
-        const Counter = () => {
-          const [count, setCount] = useState(0);
-          return (
-            <div>
-              <p>Count: {count}</p>
-              <button onClick={() => setCount(count + 1)}>Increment</button>
-              <button onClick={() => setCount(count - 1)}>Decrement</button>
-            </div>
-          );
-        };
-      `,
+      doc: initialValue,
       parent: editorRef.current,
       extensions: [
         oneDark,
@@ -45,7 +36,12 @@ export const CodeEditor = ({ fileName }: Props) => {
         languageExtension,
         keymap.of([indentWithTab]),
         minimap(),
-        indentationMarkers()
+        indentationMarkers(),
+        EditorView.updateListener.of((update) => {   // Crea un "oyente" que se activa cada vez que escribe, borra etc 
+          if (update.docChanged) {                   // Se verifica si el documento cambió
+            onChange(update.state.doc.toString());   // Si cambió, se actualiza el estado
+          }
+        })
       ]
     });
 
@@ -53,8 +49,9 @@ export const CodeEditor = ({ fileName }: Props) => {
 
     return () => {
       view.destroy();
-    }
-  }, [])
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps --initialValue is only used to initialize the document
+  }, [languageExtension])
 
 
 
