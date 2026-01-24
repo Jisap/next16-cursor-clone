@@ -14,12 +14,13 @@ const DEBOUNCE_MS = 1500;
 
 export const EditorView = ({ projectId }: { projectId: Id<"projects"> }) => {
 
-  const { activeTabId } = useEditor(projectId);              // Hook que nos devuelve el id del tab activo
-  const activeFile = useFile(activeTabId);                   // Hook que nos devuelve el archivo activo en base al id del tab activo
-  const updateFile = useUpdateFile();                        // Hook que nos devuelve la función para actualizar el archivo
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);    // Hook que nos devuelve un timeout para actualizar el archivo
+  const { activeTabId } = useEditor(projectId);                   // Hook que nos devuelve el id del tab activo
+  const activeFile = useFile(activeTabId);                        // Hook que nos devuelve el archivo activo en base al id del tab activo
+  const updateFile = useUpdateFile();                             // Hook que nos devuelve la función para actualizar el archivo
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);         // Hook que nos devuelve un timeout para actualizar el archivo
 
-
+  const isActiveFileBinary = activeFile && activeFile.storageId;  // Los archivos binarios si tinenen storageId
+  const isActiveFileText = activeFile && !activeFile.storageId;   // Los archivos de texto no tienen storageId
 
   return (
     <div className="h-full flex flex-col">
@@ -42,7 +43,7 @@ export const EditorView = ({ projectId }: { projectId: Id<"projects"> }) => {
           </div>
         )}
 
-        {activeFile && (
+        {isActiveFileText && (
           <CodeEditor
             key={activeFile._id}
             fileName={activeFile.name}
@@ -60,6 +61,10 @@ export const EditorView = ({ projectId }: { projectId: Id<"projects"> }) => {
               }, DEBOUNCE_MS)
             }}
           />
+        )}
+
+        {isActiveFileBinary && (
+          <p>TODO: Implement binary preview</p>
         )}
       </div>
     </div>

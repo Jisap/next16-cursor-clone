@@ -13,13 +13,13 @@ import { CreateInput } from './create-input'
 import { LoadingRow } from './loading-row'
 import { Tree } from './tree'
 
-export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
+export const FileExplorer = ({ projectId }: { projectId: Id<"projects"> }) => {
 
-  const [isOpen, setIsOpen] = useState(false);                              // Controla si todo el proyecto está colapsado o expandido.
+  const [isOpen, setIsOpen] = useState(true);                              // Controla si todo el proyecto está colapsado o expandido.
   const [collapseKey, setCollapseKey] = useState(0);
   const [creating, setCreating] = useState<"file" | "folder" | null>(null);
 
-  
+
   const project = useProject(projectId);
   const rootFiles = useFolderContent({                                      // Se carga el contenido con el parentId = undefined -> archivos de la raiz
     projectId,
@@ -29,18 +29,18 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
   const createFile = useCreateFile();
   const createFolder = useCreateFolder();
 
-  if(!project) return null;
+  if (!project) return null;
 
   const handleCreate = (name: string) => {
     setCreating(null);
-    if(creating === "file") {
+    if (creating === "file") {
       createFile({
         projectId,
         name,
         content: "",
         parentId: undefined
       })
-    }else{
+    } else {
       createFolder({
         projectId,
         name,
@@ -53,7 +53,7 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
   return (
     <div className='h-full bg-sidebar'>
       <ScrollArea>
-        <div 
+        <div
           role="button"
           onClick={() => setIsOpen((value) => !value)}
           className='group/project cursor-pointer w-full text-left flex items-center gap-0.5 h-[22px] bg-accent font-bold'
@@ -62,7 +62,7 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
             className={cn(
               "size-4 shrink-0 text-muted-foreground",
               isOpen && "rotate-90"
-            )}  
+            )}
           />
 
           <p className='text-sm uppercase line-clamp-1'>
@@ -114,22 +114,22 @@ export const FileExplorer = ({ projectId }:{projectId: Id<"projects">}) => {
           <>
             {/* 1ª carga de datos */}
             {rootFiles === undefined && <LoadingRow level={0} />}
-            
+
             {/* input para creación de file/folder */}
             {creating && (
-              <CreateInput 
+              <CreateInput
                 type={creating}
                 level={0}
                 onSubmit={handleCreate}
                 onCancel={() => setCreating(null)}
               />
             )}
-            
+
             {/* 2º mapeo de los datos */}
             {/* Se carga solo los archivos y carpetas de nivel superior donde parentId = undefined */}
             {/* Por cada archivo/carpeta se renderiza un componente Tree */}
             {rootFiles?.map((item) => (
-              <Tree 
+              <Tree
                 key={`${item._id}-${collapseKey}`}
                 item={item}
                 level={0}

@@ -11,12 +11,12 @@ import { customSetup } from '../extensions/custom-setup'
 
 interface Props {
   fileName: string;
-  initialValue: string;
+  initialValue?: string;
   onChange: (value: string) => void;
 }
 
 
-export const CodeEditor = ({ fileName, initialValue, onChange }: Props) => {
+export const CodeEditor = ({ fileName, initialValue = "", onChange }: Props) => {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
