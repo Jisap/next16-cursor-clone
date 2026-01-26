@@ -99,6 +99,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ suggestion: output.suggestion });
 
   } catch (error) {
+    // Manejo específico para límites de cuota (Rate Limiting)
+    if (error instanceof Error && error.message.includes("Quota exceeded")) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429 }
+      );
+    }
+
     console.error("Suggestion error: ", error);
     return NextResponse.json(
       { error: "Failed to generate suggestion" },

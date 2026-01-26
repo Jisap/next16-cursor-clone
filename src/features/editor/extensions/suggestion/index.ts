@@ -56,7 +56,7 @@ class SuggestionWidget extends WidgetType {
 
 let debounceTimer: number | null = null;
 let isWaitingForSuggestion = false;
-const DEBOUNCE_DELAY = 1000;
+const DEBOUNCE_DELAY = 2500;
 
 let currentAbortController: AbortController | null = null;
 
