@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Authenticated } from "convex/react";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   variable: "--font-inter-sans",
@@ -27,16 +28,17 @@ export default function RootLayout({
   params: Promise<{ projectId: string }>
 }>) {
   return (
-    
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${inter.variable} ${plexMono.variable} antialiased`}
-        >    
-          <Providers>
-            {children}
-          </Providers>
-        </body>
-      </html>
-    
+
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${inter.variable} ${plexMono.variable} antialiased`}
+      >
+        <Providers>
+          <Toaster />
+          {children}
+        </Providers>
+      </body>
+    </html>
+
   );
 }
