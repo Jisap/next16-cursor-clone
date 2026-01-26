@@ -56,7 +56,7 @@ class SuggestionWidget extends WidgetType {
 
 let debounceTimer: number | null = null;
 let isWaitingForSuggestion = false;
-const DEBOUNCE_DELAY = 300;
+const DEBOUNCE_DELAY = 1000;
 
 let currentAbortController: AbortController | null = null;
 
@@ -94,15 +94,16 @@ const generatePayload = (view: EditorView, fileName: string) => {
   }
 }
 
-
+// Crea un plugin de vista para CodeMirror 
+// que gestiona cuándo pedir sugerencias
 // Actua como el disparador inteligente 
 // que decide cuándo solicitar una nueva sugerencia 
 // sin sobrecargar el sistema.
-const createDebouncePlugin = (fileName: string) => {                         // Función que crea el plugin de rebote (debounce) para sugerencias
-  return ViewPlugin.fromClass(                                               // Crea un plugin de vista a partir de una clase
-    class {                                                                  // Clase anónima que define el comportamiento del plugin
-      constructor(view: EditorView) {                                        // Constructor que se ejecuta al inicializar el plugin (recibe lo que esta mostrando el editor)
-        this.triggerSuggestion(view)                                         // Lanza la lógica de sugerencia inicial
+const createDebouncePlugin = (fileName: string) => {                         // Recibe el nombre del archivo para pasarlo al contexto
+  return ViewPlugin.fromClass(                                               // Instancia un plugin basado en una clase
+    class {                                                                  // Clase anónima que contiene la lógica del plugin
+      constructor(view: EditorView) {                                        // Se ejecuta una vez al montar el editor (recibe lo que esta mostrando el editor)
+        this.triggerSuggestion(view)                                         // Intenta pedir una sugerencia inicial
       }
 
       update(update: ViewUpdate) {                                           // Se ejecuta cada vez que la vista del editor se actualiza (recibe el informe de cambios)
@@ -113,45 +114,45 @@ const createDebouncePlugin = (fileName: string) => {                         // 
 
       triggerSuggestion(view: EditorView) {                                  // Método principal para gestionar el retardo de la sugerencia (recibe el view del editor)
         if (debounceTimer !== null) {                                        // Si ya existe un temporizador activo
-          clearTimeout(debounceTimer);                                       // Lo cancela para evitar múltiples ejecuciones
+          clearTimeout(debounceTimer);                                       // lo cancela para evitar múltiples ejecuciones
         }
 
-        if (currentAbortController !== null) {                               // Cancela la petición anterior si existe
-          currentAbortController.abort();
+        if (currentAbortController !== null) {                               // Si hay una petición HTTP viajando...
+          currentAbortController.abort("Cancelled by new suggestion");       // ...la mata (ya no nos interesa su respuesta) 
         }
 
-        isWaitingForSuggestion = true;                                       // Marca que estamos esperando una nueva sugerencia
+        isWaitingForSuggestion = true;                                       // Marca estado global: "Cargando..." (para la UI)
 
         debounceTimer = window.setTimeout(async () => {                      // Inicia un nuevo temporizador con el retraso definido
-          const payload = generatePayload(view, fileName);                   // Genera el payload
+          const payload = generatePayload(view, fileName);                   // Prepara el texto y contexto para enviar. Genera el payload
 
-          if (!payload) {                                                    // Si no hay payload
-            isWaitingForSuggestion = false;                                  // Indica que ya ha terminado la espera de la sugerencia
-            view.dispatch({ effects: setSuggestionEffect.of(null) })          // Envía una actualización al estado del editor
-            return
+          if (!payload) {                                                    // Si no hay contexto válido (ej. archivo vacío)...
+            isWaitingForSuggestion = false;                                  // ...apaga el estado de carga
+            view.dispatch({ effects: setSuggestionEffect.of(null) })         // ...y limpia cualquier sugerencia en pantalla
+            return                                                           // Sale, no hace petición
           }
 
-          currentAbortController = new AbortController();                    // Crea un nuevo controlador de aborto
+          currentAbortController = new AbortController();                    // Crea un "interruptor" para cancelar esta petición futura
 
-          const suggestion = await fetcher(                                  // Solicita la sugerencia con el payload y el controlador de aborto
-            payload, currentAbortController.signal
+          const suggestion = await fetcher(                                  // Llama a la API (fetcher.ts)
+            payload, currentAbortController.signal                           // Pasa los datos y la señal de aborto
           );
 
 
-          isWaitingForSuggestion = false;                                    // Indica que ya ha terminado la espera de la sugerencia
-          view.dispatch({                                                    // Envía una actualización al estado del editor
-            effects: setSuggestionEffect.of(suggestion)                      // Aplica el efecto con la nueva sugerencia (o null)
+          isWaitingForSuggestion = false;                                    // Ya tenemos respuesta, apaga "Cargando..."
+          view.dispatch({                                                    // Envía una orden al editor
+            effects: setSuggestionEffect.of(suggestion)                      // "Pinta esta sugerencia" (o bórrala si es null)
           })
-        }, DEBOUNCE_DELAY)
+        }, DEBOUNCE_DELAY)                                                   // Espera este tiempo antes de ejecutar lo de arriba 
       }
 
-      destroy() {                                                            // Método de limpieza cuando el plugin se destruye
-        if (debounceTimer !== null) {                                        // Si hay un temporizador pendiente
-          clearTimeout(debounceTimer);                                       // Lo cancela para liberar recursos y evitar errores
+      destroy() {                                                            // Se llama cuando cierras el archivo o el editor
+        if (debounceTimer !== null) {                                        // Si hay una cuenta atrás pendiente...
+          clearTimeout(debounceTimer);                                       // ...la limpia para evitar errores
         }
 
-        if (currentAbortController !== null) {
-          currentAbortController.abort();
+        if (currentAbortController !== null) {                               // Si hay una petición en curso...
+          currentAbortController.abort();                                    // ...la cancela
         }
       }
     }

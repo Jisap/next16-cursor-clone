@@ -1,7 +1,6 @@
 import { generateText, Output } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-//import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 
 const suggestionSchema = z.object({
@@ -48,6 +47,19 @@ export async function POST(request: Request) {
 
   // Toma los datos del fetcher
   try {
+
+    // 1. Intentamos parsear el JSON de forma segura
+    let jsonBody;
+    try {
+      jsonBody = await request.json();
+    } catch (parseError) {
+      // Si falla el parseo (ej. petición abortada con cuerpo vacío), devolvemos 400 sin explotar
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 }
+      );
+    }
+
     const {
       fileName,
       code,
@@ -57,7 +69,7 @@ export async function POST(request: Request) {
       textAfterCursor,
       nextLines,
       lineNumber,
-    } = await request.json();
+    } = jsonBody;
 
     if (!code) {
       return NextResponse.json(
@@ -79,7 +91,7 @@ export async function POST(request: Request) {
 
     // Genera la sugerencia
     const { output } = await generateText({
-      model: google("gemini-2.0-flash-exp"),
+      model: google("gemini-2.5-flash"),
       output: Output.object({ schema: suggestionSchema }),
       prompt,
     })
@@ -94,4 +106,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

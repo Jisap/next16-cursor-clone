@@ -50,11 +50,19 @@ export const fetcher = async (
 
     return validatedResponse.suggestion || null;                         // Devuelve la sugerencia o null
 
-  } catch (error) {
-    console.error("Suggestion error: ", error);
+  } catch (error: any) {
+    // Si es un error de límite de velocidad (429), fallamos silenciosamente
+    if (error?.response?.status === 429) {
+      return null;
+    }
+
+    if (signal.aborted) {
+      return null;
+    }
     if (error instanceof Error && error.name === "AbortError") {
       return null;
     }
+    console.error("Suggestion error: ", error);
     toast.error("Failed to fetch AI completion");
     return null;
   }
