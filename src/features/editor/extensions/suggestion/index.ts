@@ -98,11 +98,31 @@ const renderPlugin = ViewPlugin.fromClass(
   {
     decorations: (plugin) => plugin.decorations                                // Indica al editor qué propiedad renderizar
   }
-)
+);
 
-export const suggestion = (fileName: string) => [
-  suggestionState, // Our state storage
-  renderPlugin, // render the ghost text 
+const acceptSuggestionKeymap = keymap.of([
+  {
+    key: "Tab",                                                                // Tab para aceptar la sugerencia
+    run: (view) => {
+      const suggestion = view.state.field(suggestionState);                    // Obtiene el texto de la sugerencia
+      if (!suggestion) return false;                                           // Si no hay sugerencia, el tab hace su función normal
+
+      const cursor = view.state.selection.main.head;                           // Obtiene la posición del cursor
+      view.dispatch({
+        changes: { from: cursor, insert: suggestion },                         // Insert the suggestion text at the cursor position
+        selection: { anchor: cursor + suggestion.length },                      // Move the cursor to the end of the suggestion
+        effects: [setSuggestionEffect.of(null)]                                // Clear the suggestion
+      });
+      return true;
+    }
+  }
+])
+
+
+export const suggestion = (fileName: string) => [ // suggestion es la extensión que aglutina todo
+  suggestionState,                                // Estado para la sugerencia actual
+  renderPlugin,                                   // Plugin que renderiza la sugerencia
+  acceptSuggestionKeymap                          // Tab to accept suggestion
 ]
 
 
