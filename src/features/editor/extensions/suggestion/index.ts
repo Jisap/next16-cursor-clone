@@ -67,45 +67,45 @@ const generateFakeSuggestion = (textBeforeCursor: string): string | null => {
 }
 
 
-// actua como el disparador inteligente 
+// Actua como el disparador inteligente 
 // que decide cuándo solicitar una nueva sugerencia 
 // sin sobrecargar el sistema.
-const createDebouncePlugin = (fileName: string) => {                   // Función que crea el plugin de rebote (debounce) para sugerencias
-  return ViewPlugin.fromClass(                                         // Crea un plugin de vista a partir de una clase
-    class {                                                            // Clase anónima que define el comportamiento del plugin
-      constructor(view: EditorView) {                                  // Constructor que se ejecuta al inicializar el plugin (recibe lo que esta mostrando el editor)
-        this.triggerSuggestion(view)                                   // Lanza la lógica de sugerencia inicial
+const createDebouncePlugin = (fileName: string) => {                         // Función que crea el plugin de rebote (debounce) para sugerencias
+  return ViewPlugin.fromClass(                                               // Crea un plugin de vista a partir de una clase
+    class {                                                                  // Clase anónima que define el comportamiento del plugin
+      constructor(view: EditorView) {                                        // Constructor que se ejecuta al inicializar el plugin (recibe lo que esta mostrando el editor)
+        this.triggerSuggestion(view)                                         // Lanza la lógica de sugerencia inicial
       }
 
-      update(update: ViewUpdate) {                                     // Se ejecuta cada vez que la vista del editor se actualiza (recibe el informe de cambios)
-        if (update.docChanged || update.selectionSet) {                // Si el documento cambió o se movió el cursor
-          this.triggerSuggestion(update.view)                          // Reinicia el proceso de solicitud de sugerencia
+      update(update: ViewUpdate) {                                           // Se ejecuta cada vez que la vista del editor se actualiza (recibe el informe de cambios)
+        if (update.docChanged || update.selectionSet) {                      // Si el documento cambió o se movió el cursor
+          this.triggerSuggestion(update.view)                                // Reinicia el proceso de solicitud de sugerencia
         }
       }
 
-      triggerSuggestion(view: EditorView) {                            // Método principal para gestionar el retardo de la sugerencia (recibe el view del editor)
-        if (debounceTimer !== null) {                                  // Si ya existe un temporizador activo
-          clearTimeout(debounceTimer);                                 // Lo cancela para evitar múltiples ejecuciones
+      triggerSuggestion(view: EditorView) {                                  // Método principal para gestionar el retardo de la sugerencia (recibe el view del editor)
+        if (debounceTimer !== null) {                                        // Si ya existe un temporizador activo
+          clearTimeout(debounceTimer);                                       // Lo cancela para evitar múltiples ejecuciones
         }
 
-        isWaitingForSuggestion = true;                                 // Marca que estamos esperando una nueva sugerencia
+        isWaitingForSuggestion = true;                                       // Marca que estamos esperando una nueva sugerencia
 
-        debounceTimer = window.setTimeout(async () => {                // Inicia un nuevo temporizador con el retraso definido
-          const cursor = view.state.selection.main.head;               // Obtiene la posición actual del cursor (cabeza de la selección)
-          const line = view.state.doc.lineAt(cursor);                  // Obtiene la línea de texto donde está el cursor
-          const textBeforeCursor = line.text.slice(0, cursor - line.from); // Extrae el texto desde el inicio de línea hasta el cursor
-          const suggestion = generateFakeSuggestion(textBeforeCursor);  // Llama a la lógica para generar una sugerencia simulada
+        debounceTimer = window.setTimeout(async () => {                      // Inicia un nuevo temporizador con el retraso definido
+          const cursor = view.state.selection.main.head;                     // Obtiene la posición actual del cursor (cabeza de la selección)
+          const line = view.state.doc.lineAt(cursor);                        // Obtiene la línea de texto donde está el cursor
+          const textBeforeCursor = line.text.slice(0, cursor - line.from);   // Extrae el texto desde el inicio de línea hasta el cursor
+          const suggestion = generateFakeSuggestion(textBeforeCursor);       // Llama a la lógica para generar una sugerencia simulada
 
-          isWaitingForSuggestion = false;                              // Indica que ya ha terminado la espera de la sugerencia
-          view.dispatch({                                              // Envía una actualización al estado del editor
-            effects: setSuggestionEffect.of(suggestion)                // Aplica el efecto con la nueva sugerencia (o null)
+          isWaitingForSuggestion = false;                                    // Indica que ya ha terminado la espera de la sugerencia
+          view.dispatch({                                                    // Envía una actualización al estado del editor
+            effects: setSuggestionEffect.of(suggestion)                      // Aplica el efecto con la nueva sugerencia (o null)
           })
         }, DEBOUNCE_DELAY)
       }
 
-      destroy() {                                                      // Método de limpieza cuando el plugin se destruye
-        if (debounceTimer !== null) {                                  // Si hay un temporizador pendiente
-          clearTimeout(debounceTimer);                                 // Lo cancela para liberar recursos y evitar errores
+      destroy() {                                                            // Método de limpieza cuando el plugin se destruye
+        if (debounceTimer !== null) {                                        // Si hay un temporizador pendiente
+          clearTimeout(debounceTimer);                                       // Lo cancela para liberar recursos y evitar errores
         }
       }
     }
