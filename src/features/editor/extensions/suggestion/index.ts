@@ -8,6 +8,7 @@ import {
   WidgetType,
   keymap
 } from "@codemirror/view";
+import { fetcher } from "./fetcher";
 
 /**
  * Definición de un Efecto de Estado (StateEffect) para gestionar las sugerencias.
@@ -57,13 +58,40 @@ let debounceTimer: number | null = null;
 let isWaitingForSuggestion = false;
 const DEBOUNCE_DELAY = 300;
 
-const generateFakeSuggestion = (textBeforeCursor: string): string | null => {
-  const trimmed = textBeforeCursor.trim();
-  if (trimmed.endsWith("const")) return " myVariable = ";
-  if (trimmed.endsWith("function")) return " myFunction() {\n \n }";
-  if (trimmed.endsWith("console.")) return "log()";
-  if (trimmed.endsWith("return")) return " null";
-  return null;
+let currentAbortController: AbortController | null = null;
+
+// Genera el payload para enviar al servidor
+const generatePayload = (view: EditorView, fileName: string) => {
+  const code = view.state.doc.toString();
+  if (!code || code.trim().length === 0) return null;
+
+  const cursorPosition = view.state.selection.main.head;
+  const currentLine = view.state.doc.lineAt(cursorPosition);
+  const cursorInLine = cursorPosition - currentLine.from;
+
+  const previousLines: string[] = [];
+  const previousLinesToFetch = Math.min(5, currentLine.number - 1);
+  for (let i = previousLinesToFetch; i >= 1; i--) {
+    previousLines.push(view.state.doc.line(currentLine.number - i).text);
+  }
+
+  const nextLines: string[] = [];
+  const totalLines = view.state.doc.lines;
+  const linesToFetch = Math.min(5, totalLines - currentLine.number);
+  for (let i = 1; i <= linesToFetch; i++) {
+    nextLines.push(view.state.doc.line(currentLine.number + i).text)
+  }
+
+  return {
+    fileName,
+    code,
+    currentLine: currentLine.text,
+    previousLines: previousLines.join("\n"),
+    textBeforeCursor: currentLine.text.slice(0, cursorInLine),
+    textAfterCursor: currentLine.text.slice(cursorInLine),
+    nextLines: nextLines.join("\n"),
+    lineNumber: currentLine.number,
+  }
 }
 
 
@@ -88,13 +116,27 @@ const createDebouncePlugin = (fileName: string) => {                         // 
           clearTimeout(debounceTimer);                                       // Lo cancela para evitar múltiples ejecuciones
         }
 
+        if (currentAbortController !== null) {                               // Cancela la petición anterior si existe
+          currentAbortController.abort();
+        }
+
         isWaitingForSuggestion = true;                                       // Marca que estamos esperando una nueva sugerencia
 
         debounceTimer = window.setTimeout(async () => {                      // Inicia un nuevo temporizador con el retraso definido
-          const cursor = view.state.selection.main.head;                     // Obtiene la posición actual del cursor (cabeza de la selección)
-          const line = view.state.doc.lineAt(cursor);                        // Obtiene la línea de texto donde está el cursor
-          const textBeforeCursor = line.text.slice(0, cursor - line.from);   // Extrae el texto desde el inicio de línea hasta el cursor
-          const suggestion = generateFakeSuggestion(textBeforeCursor);       // Llama a la lógica para generar una sugerencia simulada
+          const payload = generatePayload(view, fileName);                   // Genera el payload
+
+          if (!payload) {                                                    // Si no hay payload
+            isWaitingForSuggestion = false;                                  // Indica que ya ha terminado la espera de la sugerencia
+            view.dispatch({ effects: setSuggestionEffect.of(null) })          // Envía una actualización al estado del editor
+            return
+          }
+
+          currentAbortController = new AbortController();                    // Crea un nuevo controlador de aborto
+
+          const suggestion = await fetcher(                                  // Solicita la sugerencia con el payload y el controlador de aborto
+            payload, currentAbortController.signal
+          );
+
 
           isWaitingForSuggestion = false;                                    // Indica que ya ha terminado la espera de la sugerencia
           view.dispatch({                                                    // Envía una actualización al estado del editor
@@ -106,6 +148,10 @@ const createDebouncePlugin = (fileName: string) => {                         // 
       destroy() {                                                            // Método de limpieza cuando el plugin se destruye
         if (debounceTimer !== null) {                                        // Si hay un temporizador pendiente
           clearTimeout(debounceTimer);                                       // Lo cancela para liberar recursos y evitar errores
+        }
+
+        if (currentAbortController !== null) {
+          currentAbortController.abort();
         }
       }
     }

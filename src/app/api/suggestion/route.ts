@@ -75,11 +75,11 @@ export async function POST(request: Request) {
       .replace("{textBeforeCursor}", textBeforeCursor)
       .replace("{textAfterCursor}", textAfterCursor)
       .replace("{nextLines}", nextLines || "")
-      .replace("{lineNumber}", lineNumber.toString())
+      .replace("{lineNumber}", lineNumber.toString());
 
     // Genera la sugerencia
     const { output } = await generateText({
-      model: google("gemini-2.5-flash"),
+      model: google("gemini-2.0-flash-exp"),
       output: Output.object({ schema: suggestionSchema }),
       prompt,
     })
