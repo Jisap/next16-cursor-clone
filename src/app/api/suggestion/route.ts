@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { google } from "@ai-sdk/google";
 import { groq } from '@ai-sdk/groq';
+import { auth } from "@clerk/nextjs/server";
 
 const suggestionSchema = z.object({
   suggestion: z
@@ -61,6 +62,14 @@ export async function POST(request: Request) {
 
   // Toma los datos del fetcher
   try {
+
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 403 }
+      );
+    }
 
     // 1. Intentamos parsear el JSON de forma segura
     let jsonBody;
