@@ -27,15 +27,15 @@ const setSuggestionEffect = StateEffect.define<string | null>();     // Es como 
 
 const suggestionState = StateField.define<string | null>({           // Estado para almacenar la sugerencia actual
   create() {
-    return null                                                      // Valor inicial
+    return null                                                      // Valor inicial (null)
   },
   update(value, transaction) {                                       // Actualiza el estado cuando ocurre algo en el editor
-    for (const effect of transaction.effects) {                      // Si la transacción (accion que ocurre) tiene un setSuggestionEffect (sugerencia) la actualizamos
-      if (effect.is(setSuggestionEffect)) {                          // Si no mantenemos el valor de la sugerencia
-        return effect.value;
+    for (const effect of transaction.effects) {                      // Recorre todos las transacciones (acciones) que ocurrieron en el editor 
+      if (effect.is(setSuggestionEffect)) {                          // Si la transacción (accion que ocurre (tiene una sugerencia)) existe
+        return effect.value;                                         // actualizamos el valor de la transacción (sugerencia)
       }
     }
-    return value;
+    return value;                                                    // Si no mantenemos el valor de la sugerencia inicial
   }
 });
 

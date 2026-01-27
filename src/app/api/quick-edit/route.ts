@@ -111,6 +111,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ editedCode: output.editedCode });
 
   } catch (error) {
-
+    console.error("Quick edit error: ", error);
+    return NextResponse.json(
+      { error: "Failed to generate quick edit" },
+      { status: 500 }
+    );
   }
 }
