@@ -15,7 +15,7 @@ let currentAbortController: AbortController | null = null;
 export const showQuickEditEffect = StateEffect.define<boolean>();             // Es como una especie de evento personalizado. Despacha una orden al editor 
 
 
-const quickEditState = StateField.define<boolean>({                           // Estado para almacenar la edicion rapida actual
+export const quickEditState = StateField.define<boolean>({                           // Estado para almacenar la edicion rapida actual
   create() {
     return false                                                              // Valor inicial (false)
   },
@@ -174,9 +174,10 @@ const quickEditKeymap = keymap.of([
   }
 ])
 
-
-const captureViewExtension = EditorView.updateListener.of((update) => {
-  editorView = update.view;
+//  conecta la lógica externa (tu formulario de edición) 
+// con el editor de CodeMirror.
+const captureViewExtension = EditorView.updateListener.of((update) => {      // updateListener obtiene todas las actualizaciones del editor
+  editorView = update.view;                                                  // editorView se actualiza con la nueva vista del editor
 })
 
 
