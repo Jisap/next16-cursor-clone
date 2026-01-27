@@ -9,6 +9,7 @@ import { indentationMarkers } from "@replit/codemirror-indentation-markers"
 import { customSetup } from '../extensions/custom-setup'
 import { suggestion } from '../extensions/suggestion'
 import { quickEdit } from '../extensions/quick-edit'
+import { selectionTooltip } from '../extensions/selection-tooltip'
 
 
 interface Props {
@@ -38,6 +39,7 @@ export const CodeEditor = ({ fileName, initialValue = "", onChange }: Props) => 
         languageExtension,
         suggestion(fileName),
         quickEdit(fileName),
+        selectionTooltip(),
         keymap.of([indentWithTab]),
         minimap(),
         indentationMarkers(),
