@@ -70,6 +70,39 @@ export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) =>
           </Button>
         </div>
       </div>
+
+      <Conversation className="flex-1">
+        <ConversationContent>
+          <p>Messages</p>
+        </ConversationContent>
+
+        <ConversationScrollButton />
+      </Conversation>
+
+      <div className="p-3">
+        <PromptInput
+          onSubmit={() => { }}
+          className="mt-2 rounded-full"
+        >
+          <PromptInputBody>
+            <PromptInputTextarea
+              placeholder="Ask Polaris anything..."
+              onChange={() => { }}
+              value=""
+              disabled={false}
+            />
+          </PromptInputBody>
+
+          <PromptInputFooter>
+            <PromptInputTools />
+
+            <PromptInputSubmit
+              disabled={false}
+              status="ready"
+            />
+          </PromptInputFooter>
+        </PromptInput>
+      </div>
     </div>
   )
 }
