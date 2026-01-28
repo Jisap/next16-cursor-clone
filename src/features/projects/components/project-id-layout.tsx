@@ -1,9 +1,10 @@
 "use client"
 
 import { Navbar } from "@/features/projects/components/navbar";
-import { Id } from "../../convex/_generated/dataModel";
+import { Id } from "../../../../convex/_generated/dataModel";
 import { Allotment } from "allotment";
 import "allotment/dist/style.css";
+import { ConversationsSidebar } from "@/features/conversations/components/conversations-sidebar";
 
 const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 800;
@@ -15,7 +16,7 @@ export const ProjectIdLayout = ({
   projectId,
 }: {
   children: React.ReactNode;
-  projectId: Id<"projects">;  
+  projectId: Id<"projects">;
 }) => {
   return (
     <div className="w-full h-screen flex flex-col">
@@ -34,11 +35,9 @@ export const ProjectIdLayout = ({
             maxSize={MAX_SIDEBAR_WIDTH}
             preferredSize={DEFAULT_CONVERSATION_SIDEBAR_WIDTH}
           >
-            <div>
-              Conversation sidebar
-            </div>
+            <ConversationsSidebar projectId={projectId} />
           </Allotment.Pane>
-          
+
           <Allotment.Pane>
             {children}
           </Allotment.Pane>
