@@ -34,12 +34,15 @@ export const getById = query({
   },
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get("conversations", args.id);
-    const identity = await verifyAuth(ctx);
-
     if (!conversation) {
       throw new Error("Conversation not found");
     }
-    if (conversation.projectId !== identity.subject) {
+
+    const identity = await verifyAuth(ctx);
+
+    const project = await ctx.db.get("projects", conversation.projectId);
+
+    if (!project || project.ownerId !== identity.subject) {
       throw new Error("Unauthorized");
     }
 
@@ -85,9 +88,13 @@ export const getMessages = query({
     if (!conversation) {
       throw new Error("Conversation not found");
     }
-    if (conversation.projectId !== identity.subject) {
+
+    const project = await ctx.db.get("projects", conversation.projectId);
+
+    if (!project || project.ownerId !== identity.subject) {
       throw new Error("Unauthorized");
     }
+
 
     return await ctx.db
       .query("messages")
