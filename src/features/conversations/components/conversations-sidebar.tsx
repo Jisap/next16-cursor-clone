@@ -1,6 +1,6 @@
 "use client"
 
-import Ky from "ky"
+import ky from "ky"
 import { toast } from "sonner";
 import { useState } from "react";
 import {
@@ -48,6 +48,7 @@ interface ConversationSidebarProps {
 
 export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) => {
 
+  const [input, setInput] = useState("");
   const [selectedConversationId, setSelectedConversationId] = useState<Id<"conversations"> | null>(null);
   const createConversation = useCreateConversation();
   const conversations = useConversations(projectId);
@@ -78,6 +79,38 @@ export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) =>
       toast.error("Unable to create new conversation")
       return null;
     }
+  }
+
+  const handleSubmit = async (message: PromptInputMessage) => {
+    // If processing and no new message this is just a stop function
+    if (isProcessing && !message.text) {
+      // TODO: handle cancel
+      setInput("")
+      return
+    }
+
+    // If user not click on + icon and write a message.
+    let conversationId = activeConversationId;
+
+    if (!conversationId) {
+      conversationId = await handleCreateConversation();
+      if (!conversationId) {
+        return;
+      }
+    }
+
+    // Trigger Innges function via API
+    try {
+      await ky.post("/api/messages", {
+        json: {
+          conversationId,
+          message: message.text
+        }
+      })
+    } catch (error) {
+      toast.error("Message failed to send")
+    }
+
   }
 
   return (
@@ -151,15 +184,15 @@ export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) =>
 
       <div className="p-3">
         <PromptInput
-          onSubmit={() => { }}
+          onSubmit={() => handleSubmit}
           className="mt-2 rounded-full"
         >
           <PromptInputBody>
             <PromptInputTextarea
               placeholder="Ask Polaris anything..."
-              onChange={() => { }}
-              value=""
-              disabled={false}
+              onChange={(e) => setInput(e.target.value)}
+              value={input}
+              disabled={isProcessing}
             />
           </PromptInputBody>
 
@@ -167,7 +200,7 @@ export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) =>
             <PromptInputTools />
 
             <PromptInputSubmit
-              disabled={isProcessing ? false : true}
+              disabled={isProcessing ? false : !input}
               status={isProcessing ? "streaming" : undefined}
             />
           </PromptInputFooter>
