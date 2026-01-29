@@ -107,11 +107,11 @@ export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) =>
           message: message.text // El texto del mensaje viene del PromptInputTextarea -> route.ts -> inggest (processMessage) -> respuesta
         }
       })
-      setInput("");
     } catch (error) {
       toast.error("Message failed to send")
     }
 
+    setInput("")
   }
 
   return (
