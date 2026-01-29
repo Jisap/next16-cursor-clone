@@ -83,6 +83,6 @@ export async function POST(request: Request) {
     messageId: assistantMessageId
   });
 
-  // TODO invole Innges background jobs
+  // TODO invoke Innges background jobs
 
 }
