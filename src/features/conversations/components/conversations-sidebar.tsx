@@ -50,15 +50,15 @@ export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) =>
 
   const [input, setInput] = useState("");
   const [selectedConversationId, setSelectedConversationId] = useState<Id<"conversations"> | null>(null);
-  const createConversation = useCreateConversation();
-  const conversations = useConversations(projectId);
+  const createConversation = useCreateConversation();              // Hook para crear una conversación
+  const conversations = useConversations(projectId);               // Hook para obtener las conversaciones
 
-  const activeConversationId =
+  const activeConversationId =                                     // Si hay una conversación seleccionada, se usa esa, si no, se usa la primera conversación de la lista, si no hay conversaciones, se usa null
     selectedConversationId ?? conversations?.[0]?._id ?? null;
 
-  const activeConversation = useConversation(activeConversationId);
+  const activeConversation = useConversation(activeConversationId); // Hook para obtener la conversación activa
 
-  const conversationMessages = useMessages(activeConversationId);
+  const conversationMessages = useMessages(activeConversationId);   // Hook para obtener los mensajes de la conversación activa
 
   const isProcessing = conversationMessages?.some(
     (msg) => msg.status === "processing"
@@ -104,7 +104,7 @@ export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) =>
       await ky.post("/api/messages", {
         json: {
           conversationId,
-          message: message.text
+          message: message.text // El texto del mensaje viene del PromptInputTextarea -> route.ts -> inggest (processMessage) -> respuesta
         }
       })
       setInput("");

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import z from "zod";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
+import { inngest } from "@/inngest/client";
 
 
 
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
 
   // TODO: Check for processing messages
 
-  // Con el projectId, el conversationId y el content(message) creamos el mensaje
+  // Con el projectId, el conversationId y el content(message) creamos el mensaje en bd
   await convex.mutation(api.system.createMessage, {
     internalKey,
     conversationId: conversationId as Id<"conversations">,
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
     content: message,
   });
 
-  // Creamos un mensaje vacío para el asistente con estado "processing".
+  // Creamos un mensaje vacío (en bd) para el asistente con estado "processing".
   // Esto permite que el frontend muestre inmediatamente un indicador de carga 
   // (spinner/animación) mientras la IA genera la respuesta real.
   const assistantMessageId = await convex.mutation(api.system.createMessage, {
@@ -75,11 +76,17 @@ export async function POST(request: Request) {
     status: "processing",
   });
 
-  // TODO: invoke inngest to process the message
+  // Invoke inngest to process the message
+  const event = await inngest.send({
+    name: "message/sent",
+    data: {
+      messageId: assistantMessageId,
+    },
+  });
 
   return NextResponse.json({
     success: true,
-    eventId: 0,
+    eventId: event.ids[0],
     messageId: assistantMessageId
   });
 
