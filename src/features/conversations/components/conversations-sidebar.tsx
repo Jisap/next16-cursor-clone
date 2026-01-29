@@ -107,6 +107,7 @@ export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) =>
           message: message.text
         }
       })
+      setInput("");
     } catch (error) {
       toast.error("Message failed to send")
     }
@@ -184,7 +185,7 @@ export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) =>
 
       <div className="p-3">
         <PromptInput
-          onSubmit={() => handleSubmit}
+          onSubmit={handleSubmit}
           className="mt-2 rounded-full"
         >
           <PromptInputBody>
