@@ -61,4 +61,19 @@ export const createMessage = mutation({
 
     return messageId;
   }
+});
+
+export const updateMessageContent = mutation({
+  args: {
+    internalKey: v.string(),
+    messageId: v.id("messages"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+    await ctx.db.patch(args.messageId, {
+      content: args.content,
+      status: "completed",
+    });
+  }
 })

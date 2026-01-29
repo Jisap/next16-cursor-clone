@@ -63,7 +63,6 @@ export async function POST(request: Request) {
     content: message,
   });
 
-  // 
   // Creamos un mensaje vacío para el asistente con estado "processing".
   // Esto permite que el frontend muestre inmediatamente un indicador de carga 
   // (spinner/animación) mientras la IA genera la respuesta real.
@@ -76,7 +75,7 @@ export async function POST(request: Request) {
     status: "processing",
   });
 
-  // TODO: invoice inngest to process the message
+  // TODO: invoke inngest to process the message
 
   return NextResponse.json({
     success: true,
