@@ -160,16 +160,22 @@ export const ConversationsSidebar = ({ projectId }: ConversationSidebarProps) =>
               from={message.role}
             >
               <MessageContent>
-                {message.status === "processing" ? (
-                  <div className="flex items-centergap-2 text-muted-foreground">
-                    <LoaderIcon className="size-4 animate-spin" />
-                    <span>Thinking...</span>
-                  </div>
-                ) : (
-                  <MessageResponse>
-                    {message.content}
-                  </MessageResponse>
-                )}
+                {message.status === "processing"
+                  ? (
+                    <div className="flex items-centergap-2 text-muted-foreground">
+                      <LoaderIcon className="size-4 animate-spin" />
+                      <span>Thinking...</span>
+                    </div>
+                  ) : message.status === "cancelled"
+                    ? (
+                      <span className="text-muted-foreground italic">
+                        Request cancelled
+                      </span>
+                    ) : (
+                      <MessageResponse>
+                        {message.content}
+                      </MessageResponse>
+                    )}
               </MessageContent>
 
               {
