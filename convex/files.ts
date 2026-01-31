@@ -3,7 +3,12 @@ import { mutation, query } from "./_generated/server";
 import { verifyAuth } from "./auth";
 import { Doc, Id } from "./_generated/dataModel";
 
-
+/**
+ * Estas funciones están diseñadas para ser llamadas directamente desde el navegador por el 
+ * usuario real. Su característica principal es que usan:
+ *   Seguridad: Se basan en el token de Clerk del usuario.
+ *   Restricción: Solo funcionan si hay un usuario logueado en el navegador.
+ */
 
 export const getFiles = query({
   args: { projectId: v.id("projects") },
