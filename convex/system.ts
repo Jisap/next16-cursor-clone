@@ -232,8 +232,8 @@ export const createFile = mutation({
 
     const files = await ctx.db
       .query("files")
-      .withIndex("by_project_parent", (q) =>
-        q.eq("projectId", args.projectId).eq("parentId", args.parentId)
+      .withIndex("by_project_parent", (q) =>                              // Usa el índice que creamos específicamente para organizar archivos por proyecto y carpeta padre.
+        q.eq("projectId", args.projectId).eq("parentId", args.parentId)   // Filtra para que solo nos devuelva los archivos que están dentro de la carpeta que le indicamos (el parentId).
       )
       .collect();
 
@@ -255,5 +255,60 @@ export const createFile = mutation({
     });
 
     return fileId;
+  },
+});
+
+// Permite que el agente de IA cree múltiples archivos a la vez.
+export const createFiles = mutation({
+  args: {
+    internalKey: v.string(),
+    projectId: v.id("projects"),
+    parentId: v.optional(v.id("files")),
+    files: v.array( // Recibe un array de objetos con el nombre y contenido del archivo.
+      v.object({
+        name: v.string(),
+        content: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+
+    const existingFiles = await ctx.db // 1º Busca todos los archivos que existen en la carpeta actual (parentId) y que pertenecen al proyecto (projectId).
+      .query("files")
+      .withIndex("by_project_parent", (q) =>
+        q.eq("projectId", args.projectId).eq("parentId", args.parentId)
+      )
+      .collect();
+
+    const results: { name: string; fileId: string; error?: string }[] = [];
+
+    for (const file of args.files) { // 2º Itera sobre cada archivo que el agente quiere crear y comprueba
+      const existing = existingFiles.find( // si ya existe un archivo con el mismo nombre en esa carpeta.
+        (f) => f.name === file.name && f.type === "file"
+      );
+
+      if (existing) { // Si existe, lo añade al array de resultados con un mensaje de error.
+        results.push({
+          name: file.name,
+          fileId: existing._id,
+          error: "File already exists",
+        });
+        continue;
+      }
+
+      const fileId = await ctx.db.insert("files", { // Si no existe, crea el archivo y lo añade al array de resultados.
+        projectId: args.projectId,
+        name: file.name,
+        content: file.content,
+        type: "file",
+        parentId: args.parentId,
+        updatedAt: Date.now(),
+      });
+
+      results.push({ name: file.name, fileId }); // 3º Devuelve el array de resultados.
+    }
+
+    return results;
   },
 });
