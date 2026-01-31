@@ -8,6 +8,9 @@ import { api } from "../../../../convex/_generated/api";
 
 interface MessageEvent {
   messageId: Id<"messages">;
+  conversationId: Id<"conversations">;
+  projectId: Id<"projects">;
+  message: string;
 }
 
 export const processMessage = inngest.createFunction(

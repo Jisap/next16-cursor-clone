@@ -109,6 +109,9 @@ export async function POST(request: Request) {
     name: "message/sent",
     data: {
       messageId: assistantMessageId, // <--- Este es el "async.data.messageId"
+      conversationId,
+      projectId,
+      message
     },
   });
 
