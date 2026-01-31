@@ -53,7 +53,35 @@ export async function POST(request: Request) {
   // Desde la conversation obtenemos el projectId
   const projectId = conversation.projectId;
 
-  // TODO: Check for processing messages
+  // Antes de enviar un nuevo mensaje, verificamos si hay otros mensajes procesándose
+  // en el mismo proyecto y los cancelamos. Esto evita que múltiples ejecuciones de IA
+  // compitan o generen respuestas duplicadas.
+  const proccessingMessages = await convex.query(
+    api.system.getProccessingMessages,
+    {
+      internalKey,
+      projectId: projectId as Id<"projects">
+    }
+  );
+
+  if (proccessingMessages.length > 0) {
+    await Promise.all(
+      proccessingMessages.map(async (msg) => {
+        await inngest.send({
+          name: "message/cancel",
+          data: {
+            messageId: msg._id // <--- Este llega como "event.data.messageId"
+          }
+        })
+
+        await convex.mutation(api.system.updateMessageStatus, {
+          internalKey,
+          messageId: msg._id,
+          status: "cancelled"
+        });
+      })
+    );
+  }
 
   // Con el projectId, el conversationId y el content(message) creamos el mensaje en bd
   await convex.mutation(api.system.createMessage, {
