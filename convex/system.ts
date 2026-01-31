@@ -274,7 +274,7 @@ export const createFiles = mutation({
   handler: async (ctx, args) => {
     validateInternalKey(args.internalKey);
 
-    const existingFiles = await ctx.db // 1º Busca todos los archivos que existen en la carpeta actual (parentId) y que pertenecen al proyecto (projectId).
+    const existingFiles = await ctx.db                                        // 1º Busca todos los archivos que existen en la carpeta actual (parentId) y que pertenecen al proyecto (projectId).
       .query("files")
       .withIndex("by_project_parent", (q) =>
         q.eq("projectId", args.projectId).eq("parentId", args.parentId)
@@ -283,12 +283,12 @@ export const createFiles = mutation({
 
     const results: { name: string; fileId: string; error?: string }[] = [];
 
-    for (const file of args.files) { // 2º Itera sobre cada archivo que el agente quiere crear y comprueba
-      const existing = existingFiles.find( // si ya existe un archivo con el mismo nombre en esa carpeta.
+    for (const file of args.files) {                                          // 2º Itera sobre cada archivo que el agente quiere crear y comprueba
+      const existing = existingFiles.find(                                    // si ya existe un archivo con el mismo nombre en esa carpeta.
         (f) => f.name === file.name && f.type === "file"
       );
 
-      if (existing) { // Si existe, lo añade al array de resultados con un mensaje de error.
+      if (existing) {                                                         // Si existe, lo añade al array de resultados con un mensaje de error.
         results.push({
           name: file.name,
           fileId: existing._id,
@@ -297,7 +297,7 @@ export const createFiles = mutation({
         continue;
       }
 
-      const fileId = await ctx.db.insert("files", { // Si no existe, crea el archivo y lo añade al array de resultados.
+      const fileId = await ctx.db.insert("files", {                           // Si no existe, crea el archivo y lo añade al array de resultados.
         projectId: args.projectId,
         name: file.name,
         content: file.content,
@@ -306,9 +306,141 @@ export const createFiles = mutation({
         updatedAt: Date.now(),
       });
 
-      results.push({ name: file.name, fileId }); // 3º Devuelve el array de resultados.
+      results.push({ name: file.name, fileId });                              // 3º Devuelve el array de resultados.
     }
 
     return results;
+  },
+});
+
+// Used for Agent "CreateFolder" tool
+export const createFolder = mutation({
+  args: {
+    internalKey: v.string(),
+    projectId: v.id("projects"),
+    name: v.string(),
+    parentId: v.optional(v.id("files")),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+
+    const files = await ctx.db                                                // 1º Obtiene todos los archivos/carpetas que están en el mismo proyecto y en el mismo directorio padre.
+      .query("files")
+      .withIndex("by_project_parent", (q) =>
+        q.eq("projectId", args.projectId).eq("parentId", args.parentId)
+      )
+      .collect();
+
+    const existing = files.find(                                             // 2º Comprueba si ya existe una carpeta con el mismo nombre en esa ubicación.
+      (file) => file.name === args.name && file.type === "folder"
+    );
+
+    if (existing) {                                                          // Si existe, lanza un error.
+      throw new Error("Folder already exists");
+    }
+
+    const fileId = await ctx.db.insert("files", {                            // Si no existe, crea la carpeta.
+      projectId: args.projectId,
+      name: args.name,
+      type: "folder",
+      parentId: args.parentId,
+      updatedAt: Date.now(),
+    });
+
+    return fileId;
+  },
+});
+
+// Used for Agent "RenameFile" tool
+export const renameFile = mutation({
+  args: {
+    internalKey: v.string(),
+    fileId: v.id("files"),
+    newName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+
+    const file = await ctx.db.get(args.fileId);
+    if (!file) {
+      throw new Error("File not found");
+    }
+
+    // Check if a file with the new name already exists in the same parent folder
+    const siblings = await ctx.db
+      .query("files")
+      .withIndex("by_project_parent", (q) =>
+        q.eq("projectId", file.projectId).eq("parentId", file.parentId)
+      )
+      .collect();
+
+    const existing = siblings.find(
+      (sibling) =>
+        sibling.name === args.newName &&
+        sibling.type === file.type &&
+        sibling._id !== args.fileId
+    );
+
+    if (existing) {
+      throw new Error(`A ${file.type} named "${args.newName}" already exists`);
+    }
+
+    await ctx.db.patch(args.fileId, {
+      name: args.newName,
+      updatedAt: Date.now(),
+    });
+
+    return args.fileId;
+  },
+});
+
+// Used for Agent "DeleteFile" tool
+export const deleteFile = mutation({
+  args: {
+    internalKey: v.string(),
+    fileId: v.id("files"),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+
+    const file = await ctx.db.get(args.fileId);
+    if (!file) {
+      throw new Error("File not found");
+    }
+
+    // Recursively delete file/folder and all descendants
+    const deleteRecursive = async (fileId: typeof args.fileId) => {
+      const item = await ctx.db.get(fileId);
+
+      if (!item) {
+        return;
+      }
+
+      // If it's a folder, delete all children first
+      if (item.type === "folder") {
+        const children = await ctx.db
+          .query("files")
+          .withIndex("by_project_parent", (q) =>
+            q.eq("projectId", item.projectId).eq("parentId", fileId)
+          )
+          .collect();
+
+        for (const child of children) {
+          await deleteRecursive(child._id);
+        }
+      }
+
+      // Delete storage file if it exists
+      if (item.storageId) {
+        await ctx.storage.delete(item.storageId);
+      }
+
+      // Delete the file/folder itself
+      await ctx.db.delete(fileId);
+    };
+
+    await deleteRecursive(args.fileId);
+
+    return args.fileId;
   },
 });
