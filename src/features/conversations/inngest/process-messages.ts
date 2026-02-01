@@ -6,6 +6,7 @@ import { api } from "../../../../convex/_generated/api";
 import { CODING_AGENT_SYSTEM_PROMPT, TITLE_GENERATOR_SYSTEM_PROMPT } from "./constants";
 import { DEFAULT_CONVERSATION_TITLE } from "../constants";
 import { createAgent, openai } from "@inngest/agent-kit";
+import { createReadFilesTool } from "./tools/read-files";
 
 
 interface MessageEvent {
@@ -80,26 +81,30 @@ export const processMessage = inngest.createFunction(
       });
     });
 
-    // Build system prompt with conversation history (exclude the current processing message)
+    // Se crea el prompt del sistema
     let systemPrompt = CODING_AGENT_SYSTEM_PROMPT;
 
-    // Filter out the current processing message and empty messages
+    // Se crea el contexto de mensaje filtrando el mensaje actual y los mensajes vacios.
     const contextMessages = recentMessages.filter(
       (msg) => msg._id !== messageId && msg.content.trim() !== ""
     );
 
-    if (contextMessages.length > 0) {
-      const historyText = contextMessages
-        .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
+    if (contextMessages.length > 0) {                              // Si hay mensajes en el contexto
+      const historyText = contextMessages                          // Se mapea el historial de mensajes 
+        .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`) // y se le da una estructura: "USER/ASSISTANT": "Mensaje"
         .join("\n\n");
 
+      // Se inyecta al systemPrompt instrucciones para que la IA distinga claramente
+      // entre lo que ya pasó y lo que debe responder ahora
       systemPrompt += `\n\n## Previous Conversation (for context only - do NOT repeat these responses):\n${historyText}\n\n## Current Request:\nRespond ONLY to the user's new message below. Do not repeat or reference your previous responses.`;
     };
 
-    // Generate conversation title if it's still the default
+    // Se genera el titulo de la conversacion si es el titulo por defecto
     const shouldGenerateTitle =
       conversation.title === DEFAULT_CONVERSATION_TITLE;
 
+
+    // Si se debe generar el título se crea un agente que lo modifica
     if (shouldGenerateTitle) {
       const titleAgent = createAgent({
         name: "title-generator",
@@ -111,12 +116,15 @@ export const processMessage = inngest.createFunction(
         }),
       });
 
+      // Se ejecuta el agente
       const { output } = await titleAgent.run(message, { step });
 
+      // Se extrae el texto del mensaje del agente
       const textMessage = output.find(
         (m) => m.type === "text" && m.role === "assistant"
       );
 
+      // Se verifica que el mensaje sea de tipo texto
       if (textMessage?.type === "text") {
         const title =
           typeof textMessage.content === "string"
@@ -126,6 +134,7 @@ export const processMessage = inngest.createFunction(
               .join("")
               .trim();
 
+        // Si el título es válido se actualiza la bd -> frontend refleja el cambio
         if (title) {
           await step.run("update-conversation-title", async () => {
             await convex.mutation(api.system.updateConversationTitle, {
@@ -137,6 +146,28 @@ export const processMessage = inngest.createFunction(
         }
       }
     }
+
+    // Creamos el agente que va a procesar el mensaje
+    const codingAgent = createAgent({
+      name: "polaris",
+      description: "An expert AI coding assistant",
+      system: systemPrompt,
+      model: openai({
+        model: "openai/gpt-oss-20b",
+        apiKey: process.env.GROQ_API_KEY,
+        baseUrl: "https://api.groq.com/openai/v1"
+      }),
+      tools: [
+        createReadFilesTool({ internalKey }),
+        //createListFilesTool({ internalKey, projectId }),
+        // createUpdateFileTool({ internalKey }),
+        // createCreateFilesTool({ projectId, internalKey }),
+        // createCreateFolderTool({ projectId, internalKey }),
+        // createRenameFileTool({ internalKey }),
+        // createDeleteFilesTool({ internalKey }),
+        // createScrapeUrlsTool(),
+      ],
+    });
 
     await step.run("update-assistant-message", async () => {
       await convex.mutation(api.system.updateMessageContent, {
