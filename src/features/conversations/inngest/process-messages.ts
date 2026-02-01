@@ -7,6 +7,7 @@ import { CODING_AGENT_SYSTEM_PROMPT, TITLE_GENERATOR_SYSTEM_PROMPT } from "./con
 import { DEFAULT_CONVERSATION_TITLE } from "../constants";
 import { createAgent, openai } from "@inngest/agent-kit";
 import { createReadFilesTool } from "./tools/read-files";
+import { createListFilesTool } from "./tools/list-files";
 
 
 interface MessageEvent {
@@ -159,7 +160,7 @@ export const processMessage = inngest.createFunction(
       }),
       tools: [
         createReadFilesTool({ internalKey }),
-        //createListFilesTool({ internalKey, projectId }),
+        createListFilesTool({ internalKey, projectId }),
         // createUpdateFileTool({ internalKey }),
         // createCreateFilesTool({ projectId, internalKey }),
         // createCreateFolderTool({ projectId, internalKey }),
