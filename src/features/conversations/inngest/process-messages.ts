@@ -10,6 +10,7 @@ import { createReadFilesTool } from "./tools/read-files";
 import { createListFilesTool } from "./tools/list-files";
 import { createUpdateFileTool } from "./tools/update-file";
 import { createCreateFilesTool } from "./tools/create-files";
+import { createCreateFolderTool } from "./tools/create-folder";
 
 
 interface MessageEvent {
@@ -165,7 +166,7 @@ export const processMessage = inngest.createFunction(
         createListFilesTool({ internalKey, projectId }),
         createUpdateFileTool({ internalKey }),
         createCreateFilesTool({ projectId, internalKey }),
-        // createCreateFolderTool({ projectId, internalKey }),
+        createCreateFolderTool({ projectId, internalKey }),
         // createRenameFileTool({ internalKey }),
         // createDeleteFilesTool({ internalKey }),
         // createScrapeUrlsTool(),
