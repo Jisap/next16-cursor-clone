@@ -5,7 +5,7 @@ import { convex } from "@/lib/convex-client";
 import { api } from "../../../../convex/_generated/api";
 import { CODING_AGENT_SYSTEM_PROMPT, TITLE_GENERATOR_SYSTEM_PROMPT } from "./constants";
 import { DEFAULT_CONVERSATION_TITLE } from "../constants";
-import { createAgent, openai } from "@inngest/agent-kit";
+import { createAgent, createNetwork, openai } from "@inngest/agent-kit";
 import { createReadFilesTool } from "./tools/read-files";
 import { createListFilesTool } from "./tools/list-files";
 
@@ -170,12 +170,78 @@ export const processMessage = inngest.createFunction(
       ],
     });
 
+    // Crea una red de ejecución autónoma (Autonomous Network Loop)
+    // Aunque solo tenemos un agente ('codingAgent'), el "network" permite crear un bucle de razonamiento
+    // estilo ReAct (Reasoning + Acting). Esto permite que el agente:
+    // 1. Reciba el mensaje del usuario.
+    // 2. Decida usar herramientas (si es necesario).
+    // 3. Reciba la salida de esas herramientas.
+    // 4. Vuelva a pensar y decida si necesita más herramientas o si ya tiene la respuesta final.
+    const network = createNetwork({
+      name: "polaris-network",
+      agents: [codingAgent],
+      maxIter: 20,                                             // "Kill switch": Límite máximo de iteraciones (pensamientos/acciones) para evitar bucles infinitos.
+      // --- CEREBRO DEL BUCLE (ROUTER) ---
+      // Esta función se ejecuta después de cada paso 
+      // del agente para decidir qué hacer a continuación.
+      router: ({ network }) => {
+        const lastResult = network.state.results.at(-1);       // Inspeccionamos lo último que hizo el agente
+
+
+        const hasTextResponse = lastResult?.output.some(       // Verificamos si el agente generó texto para el usuario (respuesta hablada)
+          (m) => m.type === "text" && m.role === "assistant"
+        );
+
+
+        const hasToolCalls = lastResult?.output.some(          // Verificamos si el agente solicitó usar alguna herramienta (abrir archivo, leer web, etc.) 
+          (m) => m.type === "tool_call"
+        );
+
+        // Lógica de decisión de parada:
+        // Si el agente respondió con texto Y NO está intentando usar herramientas...
+        // significa que ha terminado su trabajo y nos está dando la respuesta final.
+        // Retornamos 'undefined' para romper el bucle y finalizar la ejecución de la red.
+        if (hasTextResponse && !hasToolCalls) {
+          return undefined;
+        }
+
+        // Si hay llamadas a herramientas (o no hubo respuesta de texto aún),
+        // devolvemos al 'codingAgent' para que se vuelva a ejecutar.
+        // El framework de Inngest ejecutará las herramientas automáticamente e inyectará
+        // los resultados en la "memoria" del agente en la siguiente vuelta.
+        return codingAgent;
+      }
+    });
+
+    // Run the agent
+    const result = await network.run(message);                 // Ejecuta la red con el mensaje del usuario
+
+    // Extract the assistant's text response 
+    // from the last agent result
+    const lastResult = result.state.results.at(-1);            // Obtiene el resultado final
+    const textMessage = lastResult?.output.find(
+      (m) => m.type === "text" && m.role === "assistant"       // Busca el mensaje de texto final del asistente
+    );
+
+    let assistantResponse =
+      "I processed your request. Let me know if you need anything else!"; // Respuesta por defecto
+
+    if (textMessage?.type === "text") {
+      assistantResponse =
+        typeof textMessage.content === "string"
+          ? textMessage.content                                // Si es string, lo usa directamente
+          : textMessage.content.map((c) => c.text).join("");   // Si es array, une los fragmentos de texto
+    }
+
+    // Update the assistant message with the response (this also sets status to completed)
     await step.run("update-assistant-message", async () => {
       await convex.mutation(api.system.updateMessageContent, {
         internalKey,
         messageId,
-        content: "AI processed this message (TODO)",
+        content: assistantResponse,                             // Guarda la respuesta en la base de datos
       })
-    })
+    });
+
+    return { success: true, messageId, conversationId };        // Retorna éxito
   }
 )
