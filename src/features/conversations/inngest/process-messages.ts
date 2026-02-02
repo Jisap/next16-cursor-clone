@@ -9,6 +9,7 @@ import { createAgent, createNetwork, openai } from "@inngest/agent-kit";
 import { createReadFilesTool } from "./tools/read-files";
 import { createListFilesTool } from "./tools/list-files";
 import { createUpdateFileTool } from "./tools/update-file";
+import { createCreateFilesTool } from "./tools/create-files";
 
 
 interface MessageEvent {
@@ -163,7 +164,7 @@ export const processMessage = inngest.createFunction(
         createReadFilesTool({ internalKey }),
         createListFilesTool({ internalKey, projectId }),
         createUpdateFileTool({ internalKey }),
-        // createCreateFilesTool({ projectId, internalKey }),
+        createCreateFilesTool({ projectId, internalKey }),
         // createCreateFolderTool({ projectId, internalKey }),
         // createRenameFileTool({ internalKey }),
         // createDeleteFilesTool({ internalKey }),
