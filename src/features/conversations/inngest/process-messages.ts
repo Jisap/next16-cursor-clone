@@ -8,6 +8,7 @@ import { DEFAULT_CONVERSATION_TITLE } from "../constants";
 import { createAgent, createNetwork, openai } from "@inngest/agent-kit";
 import { createReadFilesTool } from "./tools/read-files";
 import { createListFilesTool } from "./tools/list-files";
+import { createUpdateFileTool } from "./tools/update-file";
 
 
 interface MessageEvent {
@@ -161,7 +162,7 @@ export const processMessage = inngest.createFunction(
       tools: [
         createReadFilesTool({ internalKey }),
         createListFilesTool({ internalKey, projectId }),
-        // createUpdateFileTool({ internalKey }),
+        createUpdateFileTool({ internalKey }),
         // createCreateFilesTool({ projectId, internalKey }),
         // createCreateFolderTool({ projectId, internalKey }),
         // createRenameFileTool({ internalKey }),
@@ -233,7 +234,8 @@ export const processMessage = inngest.createFunction(
           : textMessage.content.map((c) => c.text).join("");   // Si es array, une los fragmentos de texto
     }
 
-    // Update the assistant message with the response (this also sets status to completed)
+    // Update the assistant message with the response 
+    // (this also sets status to completed)
     await step.run("update-assistant-message", async () => {
       await convex.mutation(api.system.updateMessageContent, {
         internalKey,
