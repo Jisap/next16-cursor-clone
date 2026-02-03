@@ -104,9 +104,10 @@ export const useWebContainer = ({
         const fileTree = buildFileTree(files);                          // Convertimos los archivos de Convex al árbol del contenedor.
         await container.mount(fileTree);                                // "Cargamos" el disco duro virtual.
 
-        // Escuchamos cuando el servidor interno (ej. Vite/Next) esté listo
+        // Escuchamos cuando el servidor interno 
+        // (ej. Vite/Next) esté listo
         container.on("server-ready", (_port, url) => {
-          setPreviewUrl(url);                                           // Guardamos la URL de previsualización.
+          setPreviewUrl(url);                                           // Guardamos la URL de previsualización.("https://abcd-1234.stackblitz.io" ejemplo)
           setStatus("running");                                         // La aplicación ya está en marcha.
         });
 
