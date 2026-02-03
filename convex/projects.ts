@@ -3,7 +3,35 @@ import { mutation, query } from "./_generated/server";
 import { verifyAuth } from "./auth";
 
 
+// Permite guardar en bd la configuración de arranque del web container 
+// asociado a cada proyecto.
+export const updateSettings = mutation({
+  args: {
+    id: v.id("projects"),
+    settings: v.object({
+      installCommand: v.optional(v.string()),
+      devCommand: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const identity = await verifyAuth(ctx);
 
+    const project = await ctx.db.get("projects", args.id);
+
+    if (!project) {
+      throw new Error("Project not found");
+    }
+
+    if (project.ownerId !== identity.subject) {
+      throw new Error("Unauthorized to update this project");
+    }
+
+    await ctx.db.patch("projects", args.id, {
+      settings: args.settings,
+      updatedAt: Date.now(),
+    });
+  },
+});
 
 export const create = mutation({
   args: {
@@ -26,7 +54,7 @@ export const getPartial = query({
   args: {
     limit: v.number(),
   },
-  handler: async(ctx, args) => {
+  handler: async (ctx, args) => {
     const identity = await verifyAuth(ctx);
 
     return await ctx.db
@@ -39,7 +67,7 @@ export const getPartial = query({
 
 export const get = query({
   args: {},
-  handler: async(ctx, args) => {
+  handler: async (ctx, args) => {
     const identity = await verifyAuth(ctx);
 
     return await ctx.db
@@ -54,16 +82,16 @@ export const getById = query({
   args: {
     id: v.id("projects"),
   },
-  handler: async(ctx, args) => {
+  handler: async (ctx, args) => {
     const identity = await verifyAuth(ctx);
 
     const project = await ctx.db.get("projects", args.id);
 
-    if (!project){
+    if (!project) {
       throw new Error("Project not found")
     }
 
-    if (project.ownerId !== identity.subject){
+    if (project.ownerId !== identity.subject) {
       throw new Error("Unauthorized")
     }
 
@@ -76,16 +104,16 @@ export const rename = mutation({
     id: v.id("projects"),
     name: v.string(),
   },
-  handler: async(ctx, args) => {
+  handler: async (ctx, args) => {
     const identity = await verifyAuth(ctx);
 
     const project = await ctx.db.get("projects", args.id);
 
-    if (!project){
+    if (!project) {
       throw new Error("Project not found")
     }
 
-    if (project.ownerId !== identity.subject){
+    if (project.ownerId !== identity.subject) {
       throw new Error("Unauthorized")
     }
 

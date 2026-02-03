@@ -22,6 +22,12 @@ export default defineSchema({
       ),
     ),
     exportReportUrl: v.optional(v.string()),
+    settings: v.optional(
+      v.object({
+        installCommand: v.optional(v.string()), // Cada proyecto puede tener su propia configuración de comandos de instalación y desarrollo
+        devCommand: v.optional(v.string()),     // Guardando estos comando en la bd nuestra app sabe como encender los web containers
+      })
+    ),
   }).index("by_owner", ["ownerId"])
     .index("by_owner_updatedAt", ["ownerId", "updatedAt"]),
 

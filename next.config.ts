@@ -1,8 +1,29 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
+/**
+ * Los WebContainers permiten ejecutar un entorno de Node.js completo directamente en el navegador usando WebAssembly. 
+ * Sin embargo, para que funciones como el sistema de archivos y el multi-hilo funcionen, el navegador exige niveles
+ * de seguridad muy estrictos:
+ */
+
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Cross-Origin-Embedder-Policy", value: "credentialless" // Aísla la página de otras pestañas/ventanas
+          },
+          {
+            key: "Cross-Origin-Opener-Policy", value: "same-origin" // Obliga a que todos los recursos embebidos (WASM, workers, iframes) cumplan reglas de aislamiento
+          },
+        ],
+      }
+    ];
+  }
 };
 
 export default withSentryConfig(nextConfig, {
