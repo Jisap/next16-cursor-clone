@@ -43,6 +43,10 @@ export const useFile = (fileId: Id<"files"> | null) => {
   return useQuery(api.files.getFile, fileId ? { id: fileId } : "skip")   // Busca en la tabla "files" el documento con el id que le pasamos y si existe lo devuelve
 }
 
+export const useFiles = (projectId: Id<"projects"> | null) => {
+  return useQuery(api.files.getFiles, projectId ? { projectId } : "skip");
+};
+
 export const useFilePath = (fileId: Id<"files"> | null) => {
   return useQuery(api.files.getFilePath, fileId ? { id: fileId } : "skip") // Devuelve un array con la ruta del archivo
 }
