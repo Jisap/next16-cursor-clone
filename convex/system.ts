@@ -602,7 +602,7 @@ export const getProjectFilesWithUrls = query({
   },
 });
 
-// Crea un nuevo proyecto con el nombre del repo degithub 
+// Crea un nuevo proyecto con el nombre del repo de github 
 // para que luego pueda ser rellenado con el contenido del mismo.
 export const createProject = mutation({
   args: {
