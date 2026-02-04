@@ -624,3 +624,37 @@ export const createProject = mutation({
   },
 });
 
+// Se usa cuando un usuario crea un proyecto nuevo (desde cero o mediante un prompt) 
+// y quieres que ya tenga abierta una ventana de chat para empezar a hablar con la IA 
+// sobre ese proyecto.
+export const createProjectWithConversation = mutation({
+  args: {
+    internalKey: v.string(),                        // Clave de seguridad para validar el acceso
+    projectName: v.string(),                        // Nombre del nuevo proyecto
+    conversationTitle: v.string(),                  // Título inicial para la charla con la IA
+    ownerId: v.string(),                            // ID del usuario dueño de todo
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);          // Verifica la identidad de la petición
+
+    const now = Date.now();                         // Captura el tiempo para sincronizar ambos registros
+
+    // 1. Crea el proyecto (el contenedor de archivos)
+    const projectId = await ctx.db.insert("projects", {
+      name: args.projectName,
+      ownerId: args.ownerId,
+      updatedAt: now,
+    });
+
+    // 2. Crea la conversación inicial vinculada a ese proyecto
+    const conversationId = await ctx.db.insert("conversations", {
+      projectId,                                   // Vinculación vital: a qué proyecto pertenece el chat
+      title: args.conversationTitle,
+      updatedAt: now,
+    });
+
+    // Devuelve ambos IDs para que el IDE sepa a dónde redirigir al usuario
+    return { projectId, conversationId };
+  },
+});
+
