@@ -444,3 +444,85 @@ export const deleteFile = mutation({
     return args.fileId;
   },
 });
+
+
+// Elimina masivamente todos los archivos de un proyecto
+// cuando se importa desde github un proyecto nuevo.
+export const cleanup = mutation({
+  args: {
+    internalKey: v.string(),
+    projectId: v.id("projects"),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+
+    const files = await ctx.db
+      .query("files")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .collect();
+
+    for (const file of files) {
+      // Delete storage file if it exists
+      if (file.storageId) {
+        await ctx.storage.delete(file.storageId);
+      }
+
+      await ctx.db.delete(file._id);
+    }
+
+    return { deleted: files.length };
+  },
+});
+
+// Genera una URL de subida para un archivo a Convex Storage
+export const generateUploadUrl = mutation({
+  args: {
+    internalKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+
+// Gestiona archivos que no son de texto plano 
+// (como imágenes, archivos PDF, ejecutables, fuentes, etc.)
+export const createBinaryFile = mutation({
+  args: {
+    internalKey: v.string(),                   // Clave de validación para seguridad
+    projectId: v.id("projects"),               // ID del proyecto donde se creará el archivo
+    name: v.string(),                          // Nombre con el que se verá en el explorador
+    storageId: v.id("_storage"),               // Referencia al archivo físico en Convex Storage
+    parentId: v.optional(v.id("files")),       // ID de la carpeta contenedora si existe
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);     // Valida la identidad de la petición
+
+    const files = await ctx.db                 // Busca archivos en la carpeta de destino
+      .query("files")
+      .withIndex("by_project_parent", (q) =>
+        q.eq("projectId", args.projectId).eq("parentId", args.parentId)
+      )
+      .collect();
+
+    const existing = files.find(               // Verifica si el nombre ya está en uso
+      (file) => file.name === args.name && file.type === "file"
+    );
+
+    if (existing) {                            // Evita crear duplicados en el mismo nivel
+      throw new Error("File already exists");
+    }
+
+    const fileId = await ctx.db.insert("files", { // Registra el archivo en el explorador
+      projectId: args.projectId,
+      name: args.name,
+      type: "file",                            // Define el tipo como archivo (no carpeta)
+      storageId: args.storageId,               // Enlaza con el contenido binario/storage
+      parentId: args.parentId,
+      updatedAt: Date.now(),                   // Marca la fecha de creación actual
+    });
+
+    return fileId;                             // Devuelve el ID del nuevo recurso creado
+  },
+});
