@@ -526,3 +526,101 @@ export const createBinaryFile = mutation({
     return fileId;                             // Devuelve el ID del nuevo recurso creado
   },
 });
+
+// Actualiza el estado de importación de un proyecto
+export const updateImportStatus = mutation({
+  args: {
+    internalKey: v.string(),
+    projectId: v.id("projects"),
+    status: v.optional(
+      v.union(
+        v.literal("importing"),
+        v.literal("completed"),
+        v.literal("failed")
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+
+    await ctx.db.patch("projects", args.projectId, {
+      importStatus: args.status,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+// Actualiza el estado de exportación de un proyecto a github
+export const updateExportStatus = mutation({
+  args: {
+    internalKey: v.string(),
+    projectId: v.id("projects"),
+    status: v.optional(
+      v.union(
+        v.literal("exporting"),
+        v.literal("completed"),
+        v.literal("failed"),
+        v.literal("cancelled")
+      )
+    ),
+    repoUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+
+    await ctx.db.patch("projects", args.projectId, {
+      exportStatus: args.status,
+      exportRepoUrl: args.repoUrl,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+// Obtiene todos los archivos de un proyecto con sus URLs de Convex Storage
+export const getProjectFilesWithUrls = query({
+  args: {
+    internalKey: v.string(),                         // Clave de seguridad para validar el acceso
+    projectId: v.id("projects"),                     // ID del proyecto cuyos archivos queremos listar
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);           // Verifica la identidad de la petición
+
+    const files = await ctx.db                       // Obtiene todos los archivos asociados al proyecto
+      .query("files")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .collect();
+
+    return await Promise.all(                        // Procesa todos los archivos en paralelo
+      files.map(async (file) => {                    // Itera para generar las URLs de descarga
+        if (file.storageId) {                        // Si el archivo tiene contenido en storage (binario)
+          const url = await ctx.storage.getUrl(file.storageId); // Genera la URL pública de acceso
+          return { ...file, storageUrl: url };       // Adjunta la URL al objeto del archivo
+        }
+        return { ...file, storageUrl: null };        // Si es texto o carpeta, la URL queda nula
+      })
+    );
+  },
+});
+
+// Crea un nuevo proyecto con el nombre del repo degithub 
+// para que luego pueda ser rellenado con el contenido del mismo.
+export const createProject = mutation({
+  args: {
+    internalKey: v.string(),                        // Clave de seguridad para validar el acceso
+    name: v.string(),                               // Nombre que se le dará al proyecto
+    ownerId: v.string(),                            // ID del usuario propietario del proyecto
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);          // Verifica la identidad de la petición
+
+    const projectId = await ctx.db.insert("projects", { // Crea la entrada en la tabla projects
+      name: args.name,
+      ownerId: args.ownerId,
+      updatedAt: Date.now(),                        // Marca el momento exacto de creación
+      importStatus: "importing",                    // Marca el estado inicial como "importando"
+    });
+
+    return projectId;                               // Devuelve el ID para seguir con la importación
+  },
+});
+
