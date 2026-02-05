@@ -53,12 +53,12 @@ interface ExportPopoverProps {
 }
 
 export const ExportPopover = ({ projectId }: ExportPopoverProps) => {
-  const project = useProject(projectId);
+  const project = useProject(projectId);        // Obtiene el proyecto actual
   const [open, setOpen] = React.useState(false);
   const { openUserProfile } = useClerk();
 
-  const exportStatus = project?.exportStatus;
-  const exportRepoUrl = project?.exportRepoUrl;
+  const exportStatus = project?.exportStatus;   // Estado de la exportación (dinámico gracias a Convex con useProject)
+  const exportRepoUrl = project?.exportRepoUrl; // URL del repositorio exportado
 
   const form = useForm({
     defaultValues: {

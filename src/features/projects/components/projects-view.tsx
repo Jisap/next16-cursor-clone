@@ -16,7 +16,7 @@ import {
 } from "unique-names-generator"
 import { useCallback, useEffect, useState } from "react";
 import { ProjectsCommandDialog } from "./projects-command-dialog";
-import { set } from "date-fns";
+import { ImportGithubDialog } from "./import-github-dialog";
 
 
 const font = Poppins({
@@ -25,8 +25,9 @@ const font = Poppins({
 })
 
 export const ProjectsView = () => {
-  
-  const [commandDialogOpen, setCommandDialogOpen] = useState(false)
+
+  const [commandDialogOpen, setCommandDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const createProject = useCreateProject();
 
   const handleCreateProject = useCallback(() => {
@@ -46,6 +47,10 @@ export const ProjectsView = () => {
         event.preventDefault()
         setCommandDialogOpen(true)
       }
+      if (event.key === "i" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        setImportDialogOpen(true);
+      }
       if (event.key === "j" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault()
         handleCreateProject()
@@ -58,19 +63,25 @@ export const ProjectsView = () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
   }, [handleCreateProject])
-  
+
   return (
     <>
-      <ProjectsCommandDialog 
+      <ProjectsCommandDialog
         open={commandDialogOpen}
         onOpenChange={setCommandDialogOpen}
       />
+
+      <ImportGithubDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+      />
+
 
       <div className='min-h-screen bg-sidebar flex flex-col items-center justify-center p-6 md:p-16'>
         <div className='w-full max-w-sm mx-auto flex flex-col gap-4 items-center'>
           <div className='flex justify-between gap-4 w-full items-center'>
             <div className='flex items-center gap-2 w-full group/logo'>
-              <img src="/logo.svg" alt="logo" className='size-[32px] md:size-[46px]'/>
+              <img src="/logo.svg" alt="logo" className='size-[32px] md:size-[46px]' />
 
               <h1 className={cn(
                 " text-4xl md:text-5xl font-semibold",
@@ -106,7 +117,7 @@ export const ProjectsView = () => {
 
               <Button
                 variant="outline"
-                onClick={() => { }}
+                onClick={() => setImportDialogOpen(true)}
                 className="h-full items-start p-4 bg-background border flex flex-col gap-6 rounded-none"
               >
                 <div className="flex items-center justify-between w-full">
@@ -125,7 +136,7 @@ export const ProjectsView = () => {
               </Button>
             </div>
 
-            <ProjectstList onViewAll={() => setCommandDialogOpen(true)}/>
+            <ProjectstList onViewAll={() => setCommandDialogOpen(true)} />
           </div>
         </div>
       </div>
