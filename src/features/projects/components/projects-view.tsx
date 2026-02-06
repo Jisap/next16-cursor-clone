@@ -7,7 +7,14 @@ import { SparkleIcon } from "lucide-react";
 import { Poppins } from "next/font/google";
 import { FaGithub } from "react-icons/fa"
 import { ProjectstList } from "./projects-lists";
-import { useEffect, useState } from "react";
+import { useCreateProject } from "../hooks/use-projects";
+import {
+  adjectives,
+  animals,
+  colors,
+  uniqueNamesGenerator,
+} from "unique-names-generator"
+import { useCallback, useEffect, useState } from "react";
 import { ProjectsCommandDialog } from "./projects-command-dialog";
 import { ImportGithubDialog } from "./import-github-dialog";
 import { NewProjectDialog } from "./new-project-dialog";
@@ -22,7 +29,21 @@ export const ProjectsView = () => {
 
   const [commandDialogOpen, setCommandDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const createProject = useCreateProject();
   const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
+
+
+
+  // const handleCreateProject = useCallback(() => {
+  //   const projectName = uniqueNamesGenerator({
+  //     dictionaries: [adjectives, animals, colors],
+  //     separator: "_",
+  //     length: 3,
+  //   })
+  //   createProject({
+  //     name: projectName
+  //   })
+  // }, [createProject])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -88,6 +109,7 @@ export const ProjectsView = () => {
               <Button
                 variant="outline"
                 onClick={() => setNewProjectDialogOpen(true)}
+                // onClick={handleCreateProject}
                 className="h-full items-start p-4 bg-background border flex flex-col gap-6 rounded-none"
               >
                 <div className="flex items-center justify-between w-full">
