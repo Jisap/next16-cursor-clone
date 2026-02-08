@@ -42,6 +42,7 @@ export const useCreateConversation = () => {
       );
 
       if (existingConversations !== undefined) {
+        // eslint-disable-next-line react-hooks/purity -- optimistic update callback runs on mutation, not render
         const now = Date.now();
         const newConversation = {
           _id: crypto.randomUUID() as Id<"conversations">,
