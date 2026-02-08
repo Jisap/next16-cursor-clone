@@ -2,7 +2,16 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 
-
+// Sort: folders first, then files, alphabetically within each group
+const sortFiles = <T extends { type: "file" | "folder"; name: string }>(
+  files: T[]
+): T[] => {
+  return [...files].sort((a, b) => {                                     // Crea copia para no mutar y ordena
+    if (a.type === "folder" && b.type === "file") return -1;             // Carpetas van antes que archivos
+    if (a.type === "file" && b.type === "folder") return 1;              // Archivos van después de carpetas
+    return a.name.localeCompare(b.name);                                 // Orden alfabético por nombre
+  });
+};
 
 export const useCreateFile = () => {
   return useMutation(api.files.createFile)
@@ -20,9 +29,30 @@ export const useRenameFile = () => {
   return useMutation(api.files.renameFile)
 }
 
-export const useDeleteFile = () => {
-  return useMutation(api.files.deleteFile)
-}
+export const useDeleteFile = ({
+  projectId,
+  parentId,
+}: {
+  projectId: Id<"projects">;
+  parentId?: Id<"files">;
+}) => {
+  return useMutation(api.files.deleteFile).withOptimisticUpdate(
+    (localStore, args) => {
+      const existingFiles = localStore.getQuery(api.files.getFolderContent, {  // Se busca la lista de archivos de la carpeta en cache
+        projectId,
+        parentId,
+      });
+
+      if (existingFiles !== undefined) {                                       // Si existe la lista en cache
+        localStore.setQuery(                                                   // Sobreescribe la lista en cache con la lista filtrada
+          api.files.getFolderContent,                                          // useFolderContent vuelve a renderizar el componente y el archivo desaparece de la pantalla
+          { projectId, parentId },                                                      // Si todo sale bien, el servidor devuelve la nueva lista
+          existingFiles.filter((file) => file._id !== args.id)                          // Si falla convex deshace el cambio y el archivo vuelve a aparecer    
+        );
+      }
+    }
+  );
+};
 
 export const useFolderContent = ({
   projectId,
@@ -44,7 +74,7 @@ export const useFile = (fileId: Id<"files"> | null) => {
 }
 
 export const useFiles = (projectId: Id<"projects"> | null) => {
-  return useQuery(api.files.getFiles, projectId ? { projectId } : "skip");
+  return useQuery(api.files.getFiles, projectId ? { projectId } : "skip"); // Devuelve todos los files de un project
 };
 
 export const useFilePath = (fileId: Id<"files"> | null) => {
