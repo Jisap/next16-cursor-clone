@@ -7,6 +7,7 @@ import { TopNavigation } from "./top-navigation"
 import Image from "next/image";
 import { CodeEditor } from "./code-editor";
 import { useEffect, useRef } from "react";
+import { AlertTriangleIcon } from "lucide-react";
 
 const DEBOUNCE_MS = 1500;
 
@@ -72,7 +73,14 @@ export const EditorView = ({ projectId }: { projectId: Id<"projects"> }) => {
         )}
 
         {isActiveFileBinary && (
-          <p>TODO: Implement binary preview</p>
+          <div className="size-full flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2.5 max-w-md text-center">
+              <AlertTriangleIcon className="size-10 text-yellow-500" />
+              <p className="text-sm">
+                The file is not displayed in the text editor because it is either binary or uses an unsupported text encoding.
+              </p>
+            </div>
+          </div>
         )}
       </div>
     </div>

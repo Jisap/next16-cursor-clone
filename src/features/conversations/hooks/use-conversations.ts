@@ -36,15 +36,15 @@ export const useConversations = (projectId: Id<"projects">) => {
 export const useCreateConversation = () => {
   return useMutation(api.conversations.create).withOptimisticUpdate(
     (localStore, args) => {
-      const existingConversations = localStore.getQuery(
+      const existingConversations = localStore.getQuery( // Se obtiene el contenido de la cache de la conversation
         api.conversations.getByProject,
         { projectId: args.projectId }
       );
 
-      if (existingConversations !== undefined) {
+      if (existingConversations !== undefined) {         // Si existe el contenido en la cache
         // eslint-disable-next-line react-hooks/purity -- optimistic update callback runs on mutation, not render
         const now = Date.now();
-        const newConversation = {
+        const newConversation = {                        // Se crea el nuevo documento
           _id: crypto.randomUUID() as Id<"conversations">,
           _creationTime: now,
           projectId: args.projectId,
@@ -52,7 +52,7 @@ export const useCreateConversation = () => {
           updatedAt: now,
         };
 
-        localStore.setQuery(
+        localStore.setQuery(                             // Se sobreescribe la lista en cache con la lista filtrada -> useConversations dispara la renderización (utiliza useQuery que detecta los cambios y vuelve a renderizar)
           api.conversations.getByProject,
           { projectId: args.projectId },
           [newConversation, ...existingConversations]

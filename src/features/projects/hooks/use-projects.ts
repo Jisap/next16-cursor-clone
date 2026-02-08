@@ -36,7 +36,7 @@ export const useCreateProject = () => {
           updatedAt: now                                                          // Fecha de actualización del sistema
         }
 
-        localStore.setQuery(api.projects.get, {}, [                      // 4. Actualizamos la caché local 
+        localStore.setQuery(api.projects.get, {}, [                      // 4. Actualizamos la caché local -> useProjects dispara la renderización (utiliza useQuery que detecta los cambios y vuelve a renderizar)
           newProject,                                                    // Con el nuevo proyecto
           ...existingProjects,
         ])
