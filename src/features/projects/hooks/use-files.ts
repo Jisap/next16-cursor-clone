@@ -14,8 +14,36 @@ const sortFiles = <T extends { type: "file" | "folder"; name: string }>(
 };
 
 export const useCreateFile = () => {
-  return useMutation(api.files.createFile)
-}
+  return useMutation(api.files.createFile).withOptimisticUpdate(
+    (localStore, args) => {
+      const existingFiles = localStore.getQuery(api.files.getFolderContent, {
+        projectId: args.projectId,
+        parentId: args.parentId,
+      });
+
+      if (existingFiles !== undefined) {
+        // eslint-disable-next-line react-hooks/purity -- optimistic update callback runs on mutation, not render
+        const now = Date.now();
+        const newFile = {
+          _id: crypto.randomUUID() as Id<"files">,
+          _creationTime: now,
+          projectId: args.projectId,
+          parentId: args.parentId,
+          name: args.name,
+          content: args.content,
+          type: "file" as const,
+          updatedAt: now,
+        };
+
+        localStore.setQuery(
+          api.files.getFolderContent,
+          { projectId: args.projectId, parentId: args.parentId },
+          sortFiles([...existingFiles, newFile])
+        );
+      }
+    }
+  );
+};
 
 export const useUpdateFile = () => {
   return useMutation(api.files.updateFile)
@@ -115,7 +143,7 @@ export const useFolderContent = ({
   parentId?: Id<"files">;
   enabled?: boolean;
 }) => {
-  return useQuery( // Los useQuery de convex devuelven undefined mientras se carga la primera vez
+  return useQuery( // Los useQuery de convex devuelven undefined mientras se carga la primera vez. useQuery abre una conexión en tiempo real (WebSocket). Detecta los cambios automáticamente, tanto los que vienen del servidor como los que provocamos con la actualización optimista.
     api.files.getFolderContent,
     enabled ? { projectId, parentId } : "skip" // Se ejecuta esta query si enabled es true
   )
