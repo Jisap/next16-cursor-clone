@@ -25,9 +25,34 @@ export const useCreateFolder = () => {
   return useMutation(api.files.createFolder)
 }
 
-export const useRenameFile = () => {
-  return useMutation(api.files.renameFile)
-}
+export const useRenameFile = ({
+  projectId,
+  parentId,
+}: {
+  projectId: Id<"projects">;
+  parentId?: Id<"files">;
+}) => {
+  return useMutation(api.files.renameFile).withOptimisticUpdate(
+    (localStore, args) => {
+      const existingFiles = localStore.getQuery(api.files.getFolderContent, { // Se obtiene el contenido de la cache de la carpeta
+        projectId,
+        parentId,
+      });
+
+      if (existingFiles !== undefined) {                                     // Si existe el contenido en la cache
+        const updatedFiles = existingFiles.map((file) =>                     // Se mapea la lista de archivos
+          file._id === args.id ? { ...file, name: args.newName } : file      // Si el id del archivo es igual al id del archivo que se está renombrando, se actualiza el nombre
+        );
+
+        localStore.setQuery(                                                 // Sobreescribe la lista en cache con la lista filtrada -> useFolderContent dispara la renderización
+          api.files.getFolderContent,
+          { projectId, parentId },
+          sortFiles(updatedFiles)
+        );
+      }
+    }
+  )
+};
 
 export const useDeleteFile = ({
   projectId,
