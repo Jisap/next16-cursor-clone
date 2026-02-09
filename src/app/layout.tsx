@@ -3,7 +3,6 @@ import { IBM_Plex_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import "allotment/dist/style.css"
 import { Providers } from "@/components/providers";
-import { Authenticated } from "convex/react";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -24,10 +23,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-  params: Promise<{ projectId: string }>
-}>) {
+}) {
   return (
 
     <html lang="en" suppressHydrationWarning>
