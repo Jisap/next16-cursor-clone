@@ -27,10 +27,16 @@ function parseGitHubUrl(url: string) {
  *  en segundo plano
  */
 export async function POST(request: Request) {
-  const { userId } = await auth();                                           // Obtiene el ID del usuario autenticado (Clerk)
+  const { userId, has } = await auth();                                           // Obtiene el ID del usuario autenticado (Clerk)
 
   if (!userId) {                                                             // Verifica si hay una sesión activa
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const hasPro = has({ plan: "pro" });
+
+  if (!hasPro) {
+    return NextResponse.json({ error: "Pro plan required" }, { status: 403 });
   }
 
   const body = await request.json();                                         // Lee el cuerpo de la petición (JSON)
