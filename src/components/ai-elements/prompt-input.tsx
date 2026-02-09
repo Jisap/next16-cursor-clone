@@ -521,13 +521,13 @@ export const PromptInput = ({
       usingProvider
         ? controller?.attachments.clear()
         : setItems((prev) => {
-            for (const file of prev) {
-              if (file.url) {
-                URL.revokeObjectURL(file.url);
-              }
+          for (const file of prev) {
+            if (file.url) {
+              URL.revokeObjectURL(file.url);
             }
-            return [];
-          }),
+          }
+          return [];
+        }),
     [usingProvider, controller]
   );
 
@@ -695,9 +695,9 @@ export const PromptInput = ({
     const text = usingProvider
       ? controller.textInput.value
       : (() => {
-          const formData = new FormData(form);
-          return (formData.get("message") as string) || "";
-        })();
+        const formData = new FormData(form);
+        return (formData.get("message") as string) || "";
+      })();
 
     // Reset form immediately after capturing text to avoid race condition
     // where user input during async blob conversion would be lost
@@ -770,7 +770,7 @@ export const PromptInput = ({
         ref={formRef}
         {...props}
       >
-        <InputGroup className="overflow-hidden">{children}</InputGroup>
+        <InputGroup className="overflow-hidden rounded-lg!">{children}</InputGroup>
       </form>
     </>
   );
@@ -883,15 +883,15 @@ export const PromptInputTextarea = ({
 
   const controlledProps = controller
     ? {
-        value: controller.textInput.value,
-        onChange: (e: ChangeEvent<HTMLTextAreaElement>) => {
-          controller.textInput.setInput(e.currentTarget.value);
-          onChange?.(e);
-        },
-      }
+      value: controller.textInput.value,
+      onChange: (e: ChangeEvent<HTMLTextAreaElement>) => {
+        controller.textInput.setInput(e.currentTarget.value);
+        onChange?.(e);
+      },
+    }
     : {
-        onChange,
-      };
+      onChange,
+    };
 
   return (
     <InputGroupTextarea
